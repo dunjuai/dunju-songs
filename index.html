@@ -72,8 +72,8 @@
   <!-- Mobile Backdrop Overlay -->
   <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden md:hidden"></div>
 
-  <!-- Sidebar (Drawer on Mobile, Fixed on Desktop) -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-purple-100 flex flex-col justify-between transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-purple-100 flex flex-col justify-between transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out flex-shrink-0">
     <div class="p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -93,6 +93,9 @@
         </button>
         <button onclick="navigate('library'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="library">
           <i class="fa-solid fa-music w-5 text-center text-slate-400"></i> Library
+        </button>
+        <button onclick="navigate('nowplaying'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="nowplaying">
+          <i class="fa-solid fa-play w-5 text-center text-brand-600"></i> Now Playing
         </button>
         <button onclick="navigate('favorites'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="favorites">
           <i class="fa-solid fa-heart w-5 text-center text-rose-500"></i> Favorites
@@ -119,14 +122,13 @@
   <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#faf9fe]">
     <!-- Top Bar -->
     <header class="h-16 px-4 sm:px-8 flex items-center justify-between gap-3 border-b border-purple-100/60 bg-white/70 backdrop-blur-md z-10 flex-shrink-0">
-      <!-- Hamburger Menu for Mobile -->
       <button onclick="toggleSidebar()" class="md:hidden text-slate-600 p-2 rounded-lg hover:bg-purple-50 transition">
         <i class="fa-solid fa-bars text-lg"></i>
       </button>
 
       <div class="relative flex-1 max-w-xl">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm"></i>
-        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search tracks, artists..." class="w-full pl-9 sm:pl-11 pr-3 py-1.5 sm:py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
+        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search songs, artists, albums... (Ctrl+F)" class="w-full pl-9 sm:pl-11 pr-3 py-1.5 sm:py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
@@ -143,47 +145,67 @@
       </div>
     </header>
 
-    <!-- Page Views Container -->
-    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-8 pb-36"></div>
+    <!-- Page Content Container -->
+    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-8 pb-40"></div>
   </main>
 
-  <!-- Bottom Player Bar (Mobile-Adaptive Layout) -->
-  <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between z-30 shadow-lg gap-2 sm:gap-4">
-    <!-- Top Row on Mobile: Track Info + Play Controls -->
+  <!-- Bottom Player Bar -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between z-30 shadow-lg gap-2 sm:gap-4">
+    <!-- Track Info + Cover Art (Clickable to open Now Playing view) -->
     <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 flex-1 min-w-0">
-      <div class="flex items-center gap-3 min-w-0 flex-1 sm:max-w-xs">
-        <div id="barArtWrapper" class="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg sm:text-xl shadow flex-shrink-0 overflow-hidden relative">
+      <div onclick="navigate('nowplaying')" class="flex items-center gap-3 min-w-0 flex-1 sm:max-w-xs cursor-pointer group">
+        <div id="barArtWrapper" class="w-11 h-11 sm:w-13 sm:h-13 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg shadow flex-shrink-0 overflow-hidden relative">
           <i id="barFallbackIcon" class="fa-solid fa-music"></i>
           <img id="barCoverImg" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover" />
         </div>
         <div class="min-w-0 flex-1">
-          <h4 id="barTitle" class="text-xs sm:text-sm font-bold text-slate-800 truncate">No song playing</h4>
+          <h4 id="barTitle" class="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-brand-600 transition">No song playing</h4>
           <p id="barArtist" class="text-[10px] sm:text-xs text-slate-400 truncate">Select a song from library</p>
         </div>
-        <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition px-1">
-          <i class="fa-solid fa-heart text-base sm:text-lg"></i>
-        </button>
       </div>
 
-      <!-- Quick Play button on Mobile Top Row -->
+      <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition px-1">
+        <i class="fa-solid fa-heart text-base sm:text-lg"></i>
+      </button>
+
+      <!-- Mobile Quick Controls -->
       <div class="flex items-center gap-2 sm:hidden">
-        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 p-1"><i class="fa-solid fa-backward-step text-base"></i></button>
+        <button onclick="toggleShuffle()" id="mobShuffleBtn" class="text-slate-300 p-1"><i class="fa-solid fa-shuffle text-sm"></i></button>
+        <button onclick="playPrev()" class="text-slate-400 p-1"><i class="fa-solid fa-backward-step text-base"></i></button>
         <button onclick="togglePlay()" id="playPauseBtnMobile" class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center text-sm shadow">
           <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 p-1"><i class="fa-solid fa-forward-step text-base"></i></button>
+        <button onclick="playNext()" class="text-slate-400 p-1"><i class="fa-solid fa-forward-step text-base"></i></button>
       </div>
     </div>
 
-    <!-- Center Scrub Bar / Playback Controls for Desktop -->
+    <!-- Center Playback Controls + Scrub Bar -->
     <div class="w-full sm:flex-1 sm:max-w-xl flex flex-col items-center gap-1">
       <div class="hidden sm:flex items-center gap-5">
-        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-backward-step text-base"></i></button>
-        <button onclick="togglePlay()" id="playPauseBtn" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 transition">
+        <!-- Shuffle Button -->
+        <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle" class="text-slate-300 hover:text-slate-600 transition p-1">
+          <i class="fa-solid fa-shuffle text-sm"></i>
+        </button>
+        <!-- Prev Button -->
+        <button onclick="playPrev()" title="Previous (Left Arrow)" class="text-slate-400 hover:text-slate-700 transition">
+          <i class="fa-solid fa-backward-step text-base"></i>
+        </button>
+        <!-- Play / Pause Button -->
+        <button onclick="togglePlay()" id="playPauseBtn" title="Play / Pause (Space)" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 transition">
           <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-forward-step text-base"></i></button>
+        <!-- Next Button -->
+        <button onclick="playNext()" title="Next (Right Arrow)" class="text-slate-400 hover:text-slate-700 transition">
+          <i class="fa-solid fa-forward-step text-base"></i>
+        </button>
+        <!-- Repeat Button -->
+        <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat (Off / All / One)" class="text-slate-300 hover:text-slate-600 transition p-1 relative">
+          <i class="fa-solid fa-repeat text-sm"></i>
+          <span id="repeatBadge" class="hidden absolute -top-1 -right-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 text-white text-[9px] font-black flex items-center justify-center leading-none">1</span>
+        </button>
       </div>
+
+      <!-- Scrubber Bar -->
       <div class="w-full flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-semibold text-slate-400">
         <span id="currentTime">0:00</span>
         <input id="seekSlider" type="range" min="0" max="100" value="0" class="flex-1 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
@@ -191,10 +213,18 @@
       </div>
     </div>
 
-    <!-- Volume on Desktop -->
-    <div class="hidden sm:flex items-center justify-end gap-2 w-1/4 max-w-[160px]">
-      <i class="fa-solid fa-volume-high text-slate-400 text-xs"></i>
+    <!-- Volume Up / Down & Mute Controls -->
+    <div class="hidden sm:flex items-center justify-end gap-2 w-1/4 max-w-[200px]">
+      <button onclick="adjustVolume(-0.1)" title="Volume Down" class="text-slate-400 hover:text-slate-700 text-xs p-1">
+        <i class="fa-solid fa-minus"></i>
+      </button>
+      <button onclick="toggleMute()" id="volIconBtn" title="Mute/Unmute" class="text-slate-400 hover:text-brand-600 text-sm p-1">
+        <i id="volIcon" class="fa-solid fa-volume-high"></i>
+      </button>
       <input id="volSlider" type="range" min="0" max="100" value="80" class="w-20 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
+      <button onclick="adjustVolume(0.1)" title="Volume Up" class="text-slate-400 hover:text-slate-700 text-xs p-1">
+        <i class="fa-solid fa-plus"></i>
+      </button>
     </div>
   </footer>
 
@@ -211,15 +241,22 @@
     let favorites = [];
     let history = [];
     let playCounts = {};
-    
+
+    let isShuffle = false;
+    let repeatMode = 0; // 0 = off, 1 = repeat all, 2 = repeat one
+    let unplayedShuffleIndices = [];
+
     let currentTrackIndex = -1;
     let currentPlaylist = [];
     let currentFolderRoute = [];
+    let currentPage = 'home';
+    let previousVolume = 0.8;
 
     const audio = document.getElementById('audioElement');
 
     window.addEventListener('DOMContentLoaded', () => {
       setupAudioEvents();
+      setupKeyboardShortcuts();
 
       if (!config.username) {
         document.getElementById('authModal').classList.remove('hidden');
@@ -246,6 +283,77 @@
 
     function getCoverUrl(trackPath) {
       return `${config.serverUrl}/api/cover?path=${encodeURIComponent(trackPath)}`;
+    }
+
+    // Shuffle & Repeat Functions
+    function toggleShuffle() {
+      isShuffle = !isShuffle;
+      const shufBtn = document.getElementById('shuffleBtn');
+      const mobShuf = document.getElementById('mobShuffleBtn');
+      if (isShuffle) {
+        shufBtn.className = 'text-brand-600 font-bold transition p-1';
+        if (mobShuf) mobShuf.className = 'text-brand-600 font-bold p-1';
+        initShuffleIndices();
+      } else {
+        shufBtn.className = 'text-slate-300 hover:text-slate-600 transition p-1';
+        if (mobShuf) mobShuf.className = 'text-slate-300 p-1';
+      }
+    }
+
+    function initShuffleIndices() {
+      unplayedShuffleIndices = currentPlaylist.map((_, i) => i).filter(i => i !== currentTrackIndex);
+      // Fisher-Yates shuffle
+      for (let i = unplayedShuffleIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unplayedShuffleIndices[i], unplayedShuffleIndices[j]] = [unplayedShuffleIndices[j], unplayedShuffleIndices[i]];
+      }
+    }
+
+    function toggleRepeat() {
+      repeatMode = (repeatMode + 1) % 3;
+      const repBtn = document.getElementById('repeatBtn');
+      const badge = document.getElementById('repeatBadge');
+
+      if (repeatMode === 0) {
+        repBtn.className = 'text-slate-300 hover:text-slate-600 transition p-1 relative';
+        badge.classList.add('hidden');
+      } else if (repeatMode === 1) { // Repeat All
+        repBtn.className = 'text-brand-600 font-bold transition p-1 relative';
+        badge.classList.add('hidden');
+      } else if (repeatMode === 2) { // Repeat One
+        repBtn.className = 'text-brand-600 font-bold transition p-1 relative';
+        badge.classList.remove('hidden');
+      }
+    }
+
+    // Volume Controls
+    function adjustVolume(delta) {
+      audio.volume = Math.min(1, Math.max(0, audio.volume + delta));
+      document.getElementById('volSlider').value = audio.volume * 100;
+      updateVolumeIcon(audio.volume);
+    }
+
+    function toggleMute() {
+      if (audio.volume > 0) {
+        previousVolume = audio.volume;
+        audio.volume = 0;
+        document.getElementById('volSlider').value = 0;
+      } else {
+        audio.volume = previousVolume || 0.8;
+        document.getElementById('volSlider').value = audio.volume * 100;
+      }
+      updateVolumeIcon(audio.volume);
+    }
+
+    function updateVolumeIcon(vol) {
+      const icon = document.getElementById('volIcon');
+      if (vol === 0) {
+        icon.className = 'fa-solid fa-volume-xmark text-rose-500';
+      } else if (vol < 0.5) {
+        icon.className = 'fa-solid fa-volume-low';
+      } else {
+        icon.className = 'fa-solid fa-volume-high';
+      }
     }
 
     function switchAuthMode(mode) {
@@ -314,14 +422,14 @@
     function initUserSession(user) {
       document.getElementById('userNameLabel').innerText = user;
       document.getElementById('userAvatar').innerText = user[0].toUpperCase();
-      
+
       const cached = localStorage.getItem('dunju_library_cache');
       if (cached) {
         library = JSON.parse(cached);
         currentPlaylist = [...library];
         document.getElementById('libCount').innerText = `${library.length} songs`;
       }
-      
+
       navigate('home');
       fetchServerLibrary();
     }
@@ -351,8 +459,12 @@
       }
     }
 
+    // Playback Engine
     function playTrack(track, playlist = null) {
-      if (playlist) currentPlaylist = playlist;
+      if (playlist) {
+        currentPlaylist = playlist;
+        if (isShuffle) initShuffleIndices();
+      }
       currentTrackIndex = currentPlaylist.findIndex(t => t.path === track.path);
 
       const streamUrl = `${config.serverUrl}/${track.path.split('/').map(encodeURIComponent).join('/')}`;
@@ -360,6 +472,9 @@
       audio.play().then(() => {
         updateBarInfo(track);
         recordPlay(track);
+        if (currentPage === 'nowplaying') {
+          renderNowPlaying(document.getElementById('contentContainer'));
+        }
       }).catch(err => {
         console.error("Playback error:", streamUrl, err);
       });
@@ -383,12 +498,45 @@
 
     function playNext() {
       if (!currentPlaylist.length) return;
-      currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+
+      if (repeatMode === 2) {
+        // Repeat One
+        audio.currentTime = 0;
+        audio.play();
+        return;
+      }
+
+      if (isShuffle) {
+        if (unplayedShuffleIndices.length === 0) {
+          if (repeatMode === 1) { // Repeat All
+            initShuffleIndices();
+          } else {
+            return;
+          }
+        }
+        currentTrackIndex = unplayedShuffleIndices.pop();
+        playTrack(currentPlaylist[currentTrackIndex]);
+        return;
+      }
+
+      // Sequential
+      if (currentTrackIndex + 1 >= currentPlaylist.length) {
+        if (repeatMode === 1) {
+          currentTrackIndex = 0;
+          playTrack(currentPlaylist[0]);
+        }
+        return;
+      }
+      currentTrackIndex++;
       playTrack(currentPlaylist[currentTrackIndex]);
     }
 
     function playPrev() {
       if (!currentPlaylist.length) return;
+      if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+        return;
+      }
       currentTrackIndex = (currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
       playTrack(currentPlaylist[currentTrackIndex]);
     }
@@ -449,6 +597,9 @@
       toggleFav(track.path);
       const isFav = favorites.includes(track.path);
       document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
+      if (currentPage === 'nowplaying') {
+        renderNowPlaying(document.getElementById('contentContainer'));
+      }
     }
 
     function toggleFav(path) {
@@ -482,6 +633,16 @@
         seek.value = (audio.currentTime / audio.duration) * 100;
         cur.innerText = formatTime(audio.currentTime);
         tot.innerText = formatTime(audio.duration);
+
+        // Update Now Playing page scrubber if visible
+        const npCur = document.getElementById('npCurrentTime');
+        const npTot = document.getElementById('npTotalTime');
+        const npBar = document.getElementById('npProgressBar');
+        if (npCur && npTot && npBar) {
+          npCur.innerText = formatTime(audio.currentTime);
+          npTot.innerText = formatTime(audio.duration);
+          npBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        }
       };
 
       seek.oninput = () => {
@@ -489,13 +650,42 @@
         audio.currentTime = (seek.value / 100) * audio.duration;
       };
 
-      if (vol) {
-        vol.oninput = () => {
-          audio.volume = vol.value / 100;
-        };
-      }
+      vol.oninput = () => {
+        audio.volume = vol.value / 100;
+        updateVolumeIcon(audio.volume);
+      };
 
       audio.onended = () => playNext();
+    }
+
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        // Ignore if user is typing in search or inputs
+        if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          togglePlay();
+        } else if (e.code === 'ArrowRight') {
+          e.preventDefault();
+          audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+        } else if (e.code === 'ArrowLeft') {
+          e.preventDefault();
+          audio.currentTime = Math.max(0, audio.currentTime - 5);
+        } else if (e.code === 'ArrowUp') {
+          e.preventDefault();
+          adjustVolume(0.05);
+        } else if (e.code === 'ArrowDown') {
+          e.preventDefault();
+          adjustVolume(-0.05);
+        } else if (e.code === 'KeyM') {
+          toggleMute();
+        } else if (e.code === 'KeyS') {
+          toggleShuffle();
+        } else if (e.code === 'KeyR') {
+          toggleRepeat();
+        }
+      });
     }
 
     function formatTime(secs) {
@@ -511,7 +701,7 @@
         navigate('home');
         return;
       }
-      const filtered = library.filter(s => 
+      const filtered = library.filter(s =>
         s.title.toLowerCase().includes(query) ||
         s.director.toLowerCase().includes(query) ||
         s.album.toLowerCase().includes(query)
@@ -519,7 +709,9 @@
       renderSongList(document.getElementById('contentContainer'), filtered, `Search: "${query}"`);
     }
 
+    // Navigation Router
     function navigate(page) {
+      currentPage = page;
       document.querySelectorAll('.nav-btn').forEach(btn => {
         if(btn.dataset.page === page) {
           btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition bg-brand-50 text-brand-600 font-bold';
@@ -533,6 +725,7 @@
       const container = document.getElementById('contentContainer');
       if (page === 'home') renderHome(container);
       if (page === 'library') renderSongList(container, library, 'All Library Songs');
+      if (page === 'nowplaying') renderNowPlaying(container);
       if (page === 'favorites') {
         const favSongs = library.filter(s => favorites.includes(s.path));
         renderSongList(container, favSongs, 'Favorite Tracks');
@@ -540,6 +733,109 @@
       if (page === 'mostplayed') renderMostPlayed(container);
       if (page === 'folders') renderFolderView(container);
       if (page === 'settings') renderSettings(container);
+    }
+
+    // Now Playing View matching user layout
+    function renderNowPlaying(container) {
+      if (currentTrackIndex === -1 && library.length > 0) {
+        currentTrackIndex = 0;
+      }
+      const track = currentPlaylist[currentTrackIndex] || library[0];
+
+      if (!track) {
+        container.innerHTML = `
+          <div class="h-96 flex flex-col items-center justify-center text-slate-400">
+            <i class="fa-solid fa-compact-disc text-6xl text-purple-200 mb-4 animate-spin"></i>
+            <p class="text-sm font-semibold">No track selected</p>
+            <button onclick="navigate('library')" class="mt-4 px-4 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs">Browse Library</button>
+          </div>
+        `;
+        return;
+      }
+
+      const isFav = favorites.includes(track.path);
+      const plays = playCounts[track.path] || 0;
+
+      container.innerHTML = `
+        <div class="max-w-4xl mx-auto space-y-8 animate-fadeIn">
+          <div class="flex flex-col md:flex-row items-center md:items-start gap-8 bg-white p-6 sm:p-10 rounded-3xl border border-purple-100 shadow-sm">
+            <!-- Large Cover Art -->
+            <div class="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl bg-gradient-to-tr from-brand-600 to-indigo-800 text-white flex items-center justify-center text-6xl shadow-xl flex-shrink-0 overflow-hidden relative group">
+              <i class="fa-solid fa-compact-disc"></i>
+              <img src="${getCoverUrl(track.path)}" class="absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105" onerror="this.remove()" />
+            </div>
+
+            <!-- Track Info & Metadata -->
+            <div class="flex-1 min-w-0 space-y-6 w-full text-center md:text-left">
+              <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-800 truncate">${track.title}</h1>
+                <p class="text-sm sm:text-base font-bold text-slate-500 mt-1 flex items-center justify-center md:justify-start gap-2">
+                  <i class="fa-solid fa-microphone text-brand-500 text-xs"></i> ${track.director}
+                </p>
+                <p class="text-xs sm:text-sm font-semibold text-slate-400 mt-0.5 flex items-center justify-center md:justify-start gap-2">
+                  <i class="fa-solid fa-compact-disc text-slate-300 text-xs"></i> ${track.album} • ${track.language}
+                </p>
+              </div>
+
+              <!-- Inline Progress Bar -->
+              <div class="space-y-1">
+                <div class="w-full bg-purple-100 h-2 rounded-full overflow-hidden cursor-pointer" onclick="seekNowPlaying(event)">
+                  <div id="npProgressBar" class="bg-brand-600 h-full rounded-full transition-all duration-100" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-bold text-slate-400">
+                  <span id="npCurrentTime">${formatTime(audio.currentTime)}</span>
+                  <span id="npTotalTime">${formatTime(audio.duration)}</span>
+                </div>
+              </div>
+
+              <!-- Quick Action Pills -->
+              <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                <button onclick="toggleFavCurrent()" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold transition flex items-center gap-2 ${isFav ? 'text-rose-500 bg-rose-50/50' : 'text-slate-600'}">
+                  <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i> ${isFav ? 'Favorited' : 'Add to Favorites'}
+                </button>
+                <button onclick="openTrackFolder('${track.language}', '${track.director}')" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold text-slate-600 transition flex items-center gap-2">
+                  <i class="fa-solid fa-folder-open text-amber-500"></i> Open Folder
+                </button>
+                <button onclick="toggleShuffle()" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold transition flex items-center gap-2 ${isShuffle ? 'text-brand-600 bg-brand-50' : 'text-slate-600'}">
+                  <i class="fa-solid fa-shuffle ${isShuffle ? 'text-brand-600' : 'text-slate-400'}"></i> Shuffle
+                </button>
+              </div>
+
+              <!-- Audio Info Stats Grid -->
+              <div class="pt-4 border-t border-purple-50 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center md:text-left">
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Format</span>
+                  <span class="text-xs font-extrabold text-slate-700 uppercase">${track.filename.split('.').pop()}</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Plays</span>
+                  <span class="text-xs font-extrabold text-slate-700">${plays} times</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Channels</span>
+                  <span class="text-xs font-extrabold text-slate-700">Stereo</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Quality</span>
+                  <span class="text-xs font-extrabold text-brand-600">Lossless / HQ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function seekNowPlaying(e) {
+      if (!audio.duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      audio.currentTime = (clickX / rect.width) * audio.duration;
+    }
+
+    function openTrackFolder(lang, dir) {
+      currentFolderRoute = [lang, dir];
+      navigate('folders');
     }
 
     function renderHome(container) {

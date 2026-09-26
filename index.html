@@ -15,21 +15,9 @@
         extend: {
           colors: {
             brand: {
-              50: '#f5f3ff',
-              100: '#ede9fe',
-              200: '#ddd6fe',
-              300: '#c4b5fd',
-              400: '#a78bfa',
-              500: '#8b5cf6',
-              600: '#7c3aed',
-              700: '#6d28d9',
-              800: '#5b21b6',
-              900: '#4c1d95',
-            },
-            surface: {
-              DEFAULT: '#f8fafc',
-              card: '#ffffff',
-              sidebar: '#fbfbfe'
+              50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
+              400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
+              800: '#5b21b6', 900: '#4c1d95',
             }
           }
         }
@@ -43,6 +31,43 @@
   </style>
 </head>
 <body class="bg-[#f4f3fb] text-slate-800 flex h-screen overflow-hidden select-none">
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-purple-100 relative">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+          <i class="fa-solid fa-music text-lg"></i>
+        </div>
+        <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
+      </div>
+
+      <h2 id="authTitle" class="text-2xl font-black text-slate-800">Welcome to Dunju AI</h2>
+      <p id="authSubtitle" class="text-xs text-slate-400 font-semibold mt-1 mb-6">Create an account to save your favorites & stats</p>
+
+      <div class="flex gap-2 p-1 bg-purple-50 rounded-xl mb-6">
+        <button id="tabRegister" onclick="switchAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition">Sign Up</button>
+        <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition">Sign In</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username</label>
+          <input id="authUsername" type="text" required placeholder="e.g. swami" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 bg-purple-50/30 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+          <input id="authPassword" type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 bg-purple-50/30 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+        </div>
+
+        <div id="authError" class="hidden text-xs font-semibold text-rose-500 bg-rose-50 p-2.5 rounded-xl"></div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/25 transition">
+          Create Account & Start Listening
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Sidebar -->
   <aside class="w-64 bg-white border-r border-purple-100 flex flex-col justify-between flex-shrink-0 z-20">
@@ -89,32 +114,34 @@
     <header class="h-16 px-8 flex items-center justify-between gap-4 border-b border-purple-100/60 bg-white/70 backdrop-blur-md z-10 flex-shrink-0">
       <div class="relative flex-1 max-w-xl">
         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-        <input id="searchInput" type="text" placeholder="Search songs, artists, albums... (Ctrl+F)" class="w-full pl-11 pr-4 py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
+        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search songs, artists, albums... (Ctrl+F)" class="w-full pl-11 pr-4 py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
       </div>
 
       <div class="flex items-center gap-3">
         <button onclick="playRandom()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-brand-500/25 transition">
           <i class="fa-solid fa-dice"></i> Play Something
         </button>
-        <div class="flex items-center gap-2 pl-3 border-l border-purple-100">
-          <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm" id="userAvatar">S</div>
-          <span class="text-xs font-bold text-slate-700" id="userNameLabel">Swami</span>
+        <div class="flex items-center gap-3 pl-3 border-l border-purple-100">
+          <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm" id="userAvatar">?</div>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-slate-700" id="userNameLabel">Guest</span>
+            <button onclick="logout()" class="text-[10px] text-slate-400 hover:text-rose-500 text-left font-semibold">Log out</button>
+          </div>
         </div>
       </div>
     </header>
 
     <!-- Page Views Container -->
-    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-8 pb-32">
-      <!-- Dynamic Views Rendered by JS -->
-    </div>
+    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-8 pb-32"></div>
   </main>
 
   <!-- Bottom Player Bar -->
   <footer class="fixed bottom-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-6 flex items-center justify-between z-30 shadow-lg">
-    <!-- Song Info -->
-    <div class="flex items-center gap-3 w-1/4 min-w-[220px]">
-      <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0">
-        <i class="fa-solid fa-music"></i>
+    <!-- Song Info & Album Art -->
+    <div class="flex items-center gap-3.5 w-1/4 min-w-[240px]">
+      <div id="barArtWrapper" class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0 overflow-hidden">
+        <i id="barFallbackIcon" class="fa-solid fa-music"></i>
+        <img id="barCoverImg" class="w-full h-full object-cover hidden" alt="Cover" />
       </div>
       <div class="min-w-0">
         <h4 id="barTitle" class="text-sm font-bold text-slate-800 truncate">No song playing</h4>
@@ -154,26 +181,104 @@
     // App State
     let config = {
       serverUrl: localStorage.getItem('dunju_server') || 'https://stream.dunjuai.com',
-      username: localStorage.getItem('dunju_user') || 'Swami'
+      username: localStorage.getItem('dunju_user') || ''
     };
 
+    let authMode = 'login';
     let library = [];
-    let favorites = JSON.parse(localStorage.getItem('dunju_favs') || '[]');
-    let history = JSON.parse(localStorage.getItem('dunju_hist') || '[]');
-    let playCounts = JSON.parse(localStorage.getItem('dunju_counts') || '{}');
+    let favorites = [];
+    let history = [];
+    let playCounts = {};
     
     let currentTrackIndex = -1;
     let currentPlaylist = [];
-    let currentFolderRoute = []; // Breadcrumbs for folder view
+    let currentFolderRoute = [];
 
     const audio = document.getElementById('audioElement');
 
-    // Init
     window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('userNameLabel').innerText = config.username;
-      document.getElementById('userAvatar').innerText = config.username[0].toUpperCase();
+      setupAudioEvents();
+
+      if (!config.username) {
+        document.getElementById('authModal').classList.remove('hidden');
+        switchAuthMode('login');
+      } else {
+        document.getElementById('authModal').classList.add('hidden');
+        initUserSession(config.username);
+      }
+    });
+
+    function getCoverUrl(trackPath) {
+      return `${config.serverUrl}/api/cover?path=${encodeURIComponent(trackPath)}`;
+    }
+
+    function switchAuthMode(mode) {
+      authMode = mode;
+      const title = document.getElementById('authTitle');
+      const sub = document.getElementById('authSubtitle');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const tabReg = document.getElementById('tabRegister');
+      const tabLog = document.getElementById('tabLogin');
+      const err = document.getElementById('authError');
+      err.classList.add('hidden');
+
+      if (mode === 'register') {
+        title.innerText = 'Welcome to Dunju AI';
+        sub.innerText = 'Create an account to save your favorites & stats';
+        submitBtn.innerText = 'Create Account & Start Listening';
+        tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
+        tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
+      } else {
+        title.innerText = 'Welcome Back';
+        sub.innerText = 'Enter your credentials to access your library & history';
+        submitBtn.innerText = 'Sign In to DunjuPlayer';
+        tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
+        tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
+      }
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('authUsername').value.trim();
+      const p = document.getElementById('authPassword').value;
+      const err = document.getElementById('authError');
+      const endpoint = authMode === 'register' ? '/api/register' : '/api/login';
+
+      try {
+        const res = await fetch(`${config.serverUrl}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          err.innerText = data.error || 'Authentication failed';
+          err.classList.remove('hidden');
+          return;
+        }
+
+        config.username = u;
+        localStorage.setItem('dunju_user', u);
+
+        if (authMode === 'login') {
+          favorites = data.favorites || [];
+          history = data.history || [];
+          playCounts = data.play_counts || {};
+        }
+
+        document.getElementById('authModal').classList.add('hidden');
+        initUserSession(u);
+      } catch (ex) {
+        err.innerText = 'Cannot reach stream.dunjuai.com';
+        err.classList.remove('hidden');
+      }
+    }
+
+    function initUserSession(user) {
+      document.getElementById('userNameLabel').innerText = user;
+      document.getElementById('userAvatar').innerText = user[0].toUpperCase();
       
-      // Load cached library
       const cached = localStorage.getItem('dunju_library_cache');
       if (cached) {
         library = JSON.parse(cached);
@@ -182,35 +287,20 @@
       }
       
       navigate('home');
-      fetchServerLibrary(); // Auto-scan
-      setupAudioEvents();
-    });
-
-    // Navigation
-    function navigate(page) {
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        if(btn.dataset.page === page) {
-          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition bg-brand-50 text-brand-600 font-bold';
-          btn.querySelector('i').classList.add('text-brand-600');
-        } else {
-          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600';
-          btn.querySelector('i').classList.remove('text-brand-600');
-        }
-      });
-
-      const container = document.getElementById('contentContainer');
-      if (page === 'home') renderHome(container);
-      if (page === 'library') renderSongList(container, library, 'All Library Songs');
-      if (page === 'favorites') {
-        const favSongs = library.filter(s => favorites.includes(s.path));
-        renderSongList(container, favSongs, 'Favorite Tracks');
-      }
-      if (page === 'mostplayed') renderMostPlayed(container);
-      if (page === 'folders') renderFolderView(container);
-      if (page === 'settings') renderSettings(container);
+      fetchServerLibrary();
     }
 
-    // Server Library Sync
+    function logout() {
+      localStorage.removeItem('dunju_user');
+      config.username = '';
+      favorites = [];
+      history = [];
+      playCounts = {};
+      audio.pause();
+      document.getElementById('authModal').classList.remove('hidden');
+      switchAuthMode('login');
+    }
+
     async function fetchServerLibrary() {
       try {
         const res = await fetch(`${config.serverUrl}/api/library`);
@@ -221,24 +311,21 @@
         document.getElementById('libCount').innerText = `${library.length} songs in library`;
         document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 ml-auto ring-4 ring-emerald-100';
       } catch (e) {
-        console.warn('Failed to reach server:', e);
         document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-rose-500 ml-auto ring-4 ring-rose-100';
       }
     }
 
-    // Audio Playback
     function playTrack(track, playlist = null) {
       if (playlist) currentPlaylist = playlist;
       currentTrackIndex = currentPlaylist.findIndex(t => t.path === track.path);
 
-      // Clean stream URL
       const streamUrl = `${config.serverUrl}/${track.path.split('/').map(encodeURIComponent).join('/')}`;
       audio.src = streamUrl;
       audio.play().then(() => {
         updateBarInfo(track);
         recordPlay(track);
       }).catch(err => {
-        console.error("Playback failed for:", streamUrl, err);
+        console.error("Playback error:", streamUrl, err);
       });
     }
 
@@ -280,28 +367,39 @@
       document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
       const isFav = favorites.includes(track.path);
       document.getElementById('barFavBtn').className = isFav ? 'ml-2 text-rose-500 transition' : 'ml-2 text-slate-300 hover:text-rose-500 transition';
+
+      // Load cover art dynamically into player bar
+      const barCoverImg = document.getElementById('barCoverImg');
+      const barFallback = document.getElementById('barFallbackIcon');
+      barCoverImg.src = getCoverUrl(track.path);
+      barCoverImg.onload = () => {
+        barCoverImg.classList.remove('hidden');
+        barFallback.classList.add('hidden');
+      };
+      barCoverImg.onerror = () => {
+        barCoverImg.classList.add('hidden');
+        barFallback.classList.remove('hidden');
+      };
     }
 
     function recordPlay(track) {
       playCounts[track.path] = (playCounts[track.path] || 0) + 1;
-      localStorage.setItem('dunju_counts', JSON.stringify(playCounts));
-
       history = history.filter(p => p !== track.path);
       history.unshift(track.path);
       if (history.length > 50) history.pop();
-      localStorage.setItem('dunju_hist', JSON.stringify(history));
 
-      // Push sync to server database
-      fetch(`${config.serverUrl}/api/sync`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          username: config.username,
-          favorites: favorites,
-          history: history,
-          play_counts: playCounts
-        })
-      }).catch(() => {});
+      if (config.username) {
+        fetch(`${config.serverUrl}/api/sync`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            username: config.username,
+            favorites: favorites,
+            history: history,
+            play_counts: playCounts
+          })
+        }).catch(() => {});
+      }
     }
 
     function toggleFavCurrent() {
@@ -318,10 +416,20 @@
       } else {
         favorites.push(path);
       }
-      localStorage.setItem('dunju_favs', JSON.stringify(favorites));
+      if (config.username) {
+        fetch(`${config.serverUrl}/api/sync`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            username: config.username,
+            favorites: favorites,
+            history: history,
+            play_counts: playCounts
+          })
+        }).catch(() => {});
+      }
     }
 
-    // Audio Elements Event Binding
     function setupAudioEvents() {
       const seek = document.getElementById('seekSlider');
       const cur = document.getElementById('currentTime');
@@ -354,7 +462,43 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // Views
+    function handleSearch(query) {
+      query = query.toLowerCase().trim();
+      if (!query) {
+        navigate('home');
+        return;
+      }
+      const filtered = library.filter(s => 
+        s.title.toLowerCase().includes(query) ||
+        s.director.toLowerCase().includes(query) ||
+        s.album.toLowerCase().includes(query)
+      );
+      renderSongList(document.getElementById('contentContainer'), filtered, `Search Results for "${query}"`);
+    }
+
+    function navigate(page) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.dataset.page === page) {
+          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition bg-brand-50 text-brand-600 font-bold';
+          btn.querySelector('i').classList.add('text-brand-600');
+        } else {
+          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600';
+          btn.querySelector('i').classList.remove('text-brand-600');
+        }
+      });
+
+      const container = document.getElementById('contentContainer');
+      if (page === 'home') renderHome(container);
+      if (page === 'library') renderSongList(container, library, 'All Library Songs');
+      if (page === 'favorites') {
+        const favSongs = library.filter(s => favorites.includes(s.path));
+        renderSongList(container, favSongs, 'Favorite Tracks');
+      }
+      if (page === 'mostplayed') renderMostPlayed(container);
+      if (page === 'folders') renderFolderView(container);
+      if (page === 'settings') renderSettings(container);
+    }
+
     function renderHome(container) {
       const recentTracks = history.map(path => library.find(s => s.path === path)).filter(Boolean).slice(0, 4);
 
@@ -365,7 +509,6 @@
             <p class="text-sm font-semibold text-slate-400 mt-1">${library.length} songs ready to stream</p>
           </div>
 
-          <!-- Continue Listening -->
           <div>
             <h3 class="text-sm font-extrabold text-slate-700 tracking-wider uppercase mb-4 flex items-center gap-2">
               <i class="fa-solid fa-rotate-left text-brand-500"></i> Continue Listening
@@ -373,8 +516,9 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               ${recentTracks.length ? recentTracks.map(t => `
                 <div onclick='playTrack(${JSON.stringify(t)})' class="group p-4 rounded-2xl bg-white border border-purple-100/70 hover:shadow-xl hover:shadow-brand-500/10 cursor-pointer transition">
-                  <div class="aspect-square w-full rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-800 flex items-center justify-center text-white text-3xl mb-3 shadow">
+                  <div class="aspect-square w-full rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-800 flex items-center justify-center text-white text-3xl mb-3 shadow overflow-hidden relative">
                     <i class="fa-solid fa-compact-disc group-hover:rotate-45 transition duration-300"></i>
+                    <img src="${getCoverUrl(t.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
                   </div>
                   <h4 class="font-bold text-sm text-slate-800 truncate">${t.title}</h4>
                   <p class="text-xs text-slate-400 truncate mt-0.5">${t.director}</p>
@@ -396,6 +540,10 @@
                 <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 group cursor-pointer transition" onclick='playTrack(${JSON.stringify(s)})'>
                   <div class="flex items-center gap-4 min-w-0">
                     <span class="text-xs font-bold text-slate-300 group-hover:text-brand-600 w-5">${idx + 1}</span>
+                    <div class="w-10 h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
+                      <i class="fa-solid fa-music text-xs"></i>
+                      <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+                    </div>
                     <div class="min-w-0">
                       <h4 class="text-sm font-bold text-slate-800 truncate">${s.title}</h4>
                       <p class="text-xs text-slate-400 truncate">${s.director} •${s.album}</p>
@@ -426,6 +574,10 @@
               <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
                 <div class="flex items-center gap-4">
                   <span class="text-sm font-bold text-brand-600 w-6">#${idx+1}</span>
+                  <div class="w-10 h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
+                    <i class="fa-solid fa-music text-xs"></i>
+                    <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+                  </div>
                   <div>
                     <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
                     <p class="text-xs text-slate-400">${s.director} •${s.album}</p>
@@ -439,9 +591,7 @@
       `;
     }
 
-    // Dynamic Tree Folder Navigation
     function renderFolderView(container) {
-      // Find current level subfolders or files
       let levelTracks = library;
       currentFolderRoute.forEach((folder, idx) => {
         if (idx === 0) levelTracks = levelTracks.filter(s => s.language === folder);
@@ -449,7 +599,6 @@
         if (idx === 2) levelTracks = levelTracks.filter(s => s.album === folder);
       });
 
-      // Collect unique next steps
       let folders = [];
       let songs = [];
 
@@ -479,7 +628,6 @@
             <button onclick="fetchServerLibrary().then(() => renderFolderView(container))" class="px-3 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-slate-600 hover:bg-brand-50">Refresh</button>
           </div>
 
-          <!-- Folders Grid -->
           ${folders.length ? `
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               ${folders.map(folderName => `
@@ -496,13 +644,16 @@
             </div>
           ` : ''}
 
-          <!-- Songs at leaf folder -->
           ${songs.length ? `
             <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden divide-y divide-purple-50">
               ${songs.map((s, idx) => `
                 <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
                   <div class="flex items-center gap-4">
                     <span class="text-xs font-bold text-slate-300">${idx+1}</span>
+                    <div class="w-8 h-8 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
+                      <i class="fa-solid fa-music text-[10px]"></i>
+                      <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+                    </div>
                     <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
                   </div>
                   <i class="fa-solid fa-play text-xs text-brand-600"></i>
@@ -528,7 +679,6 @@
       renderFolderView(document.getElementById('contentContainer'));
     }
 
-    // Settings
     function renderSettings(container) {
       container.innerHTML = `
         <div class="max-w-2xl space-y-6">
@@ -538,10 +688,6 @@
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cloudflare Stream URL</label>
               <input id="setServerUrl" type="text" value="${config.serverUrl}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username Profile</label>
-              <input id="setUsername" type="text" value="${config.username}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
-            </div>
             <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition">Save Changes</button>
           </div>
         </div>
@@ -550,13 +696,8 @@
 
     function saveSettings() {
       const url = document.getElementById('setServerUrl').value.trim();
-      const user = document.getElementById('setUsername').value.trim();
       config.serverUrl = url;
-      config.username = user;
       localStorage.setItem('dunju_server', url);
-      localStorage.setItem('dunju_user', user);
-      document.getElementById('userNameLabel').innerText = user;
-      document.getElementById('userAvatar').innerText = user[0].toUpperCase();
       fetchServerLibrary();
       alert('Settings saved!');
     }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DunjuPlayer - Web Music Experience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,15 +26,15 @@
   </script>
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 9999px; }
   </style>
 </head>
 <body class="bg-[#f4f3fb] text-slate-800 flex h-screen overflow-hidden select-none">
 
-  <!-- Mandatory Auth Modal (Visible by default until verified) -->
+  <!-- Mandatory Auth Modal -->
   <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-purple-100 relative">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-purple-100 relative">
       <div class="flex items-center gap-3 mb-6">
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
           <i class="fa-solid fa-music text-lg"></i>
@@ -42,8 +42,8 @@
         <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
       </div>
 
-      <h2 id="authTitle" class="text-2xl font-black text-slate-800">Sign In to Continue</h2>
-      <p id="authSubtitle" class="text-xs text-slate-400 font-semibold mt-1 mb-6">Enter your account credentials to access your music</p>
+      <h2 id="authTitle" class="text-xl sm:text-2xl font-black text-slate-800">Sign In to Continue</h2>
+      <p id="authSubtitle" class="text-xs text-slate-400 font-semibold mt-1 mb-6">Enter your credentials to stream your music</p>
 
       <div class="flex gap-2 p-1 bg-purple-50 rounded-xl mb-6">
         <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition">Sign In</button>
@@ -69,61 +69,73 @@
     </div>
   </div>
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r border-purple-100 flex flex-col justify-between flex-shrink-0 z-20">
+  <!-- Mobile Backdrop Overlay -->
+  <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+  <!-- Sidebar (Drawer on Mobile, Fixed on Desktop) -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-purple-100 flex flex-col justify-between transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
     <div class="p-6">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
-          <i class="fa-solid fa-music text-lg"></i>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+            <i class="fa-solid fa-music text-lg"></i>
+          </div>
+          <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
         </div>
-        <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
-        <span id="connIndicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 ml-auto ring-4 ring-emerald-100"></span>
+        <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
 
       <nav class="mt-8 space-y-1 text-sm font-semibold">
-        <button onclick="navigate('home')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="home">
+        <button onclick="navigate('home'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="home">
           <i class="fa-solid fa-house w-5 text-center text-slate-400"></i> Home
         </button>
-        <button onclick="navigate('library')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="library">
+        <button onclick="navigate('library'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="library">
           <i class="fa-solid fa-music w-5 text-center text-slate-400"></i> Library
         </button>
-        <button onclick="navigate('favorites')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="favorites">
+        <button onclick="navigate('favorites'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="favorites">
           <i class="fa-solid fa-heart w-5 text-center text-rose-500"></i> Favorites
         </button>
-        <button onclick="navigate('mostplayed')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="mostplayed">
+        <button onclick="navigate('mostplayed'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="mostplayed">
           <i class="fa-solid fa-fire w-5 text-center text-amber-500"></i> Most Played
         </button>
-        <button onclick="navigate('folders')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="folders">
+        <button onclick="navigate('folders'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="folders">
           <i class="fa-solid fa-folder w-5 text-center text-amber-400"></i> Folder View
         </button>
-        <button onclick="navigate('settings')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="settings">
+        <button onclick="navigate('settings'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="settings">
           <i class="fa-solid fa-gear w-5 text-center text-slate-400"></i> Settings
         </button>
       </nav>
     </div>
 
     <div class="p-6 border-t border-purple-50 flex items-center justify-between text-xs text-slate-400">
-      <span id="libCount">0 songs in library</span>
+      <span id="libCount">0 songs</span>
       <span class="px-2 py-0.5 rounded-md bg-purple-50 text-brand-600 font-bold">Ubuntu Live</span>
     </div>
   </aside>
 
   <!-- Main Content Area -->
-  <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#faf9fe]">
+  <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#faf9fe]">
     <!-- Top Bar -->
-    <header class="h-16 px-8 flex items-center justify-between gap-4 border-b border-purple-100/60 bg-white/70 backdrop-blur-md z-10 flex-shrink-0">
+    <header class="h-16 px-4 sm:px-8 flex items-center justify-between gap-3 border-b border-purple-100/60 bg-white/70 backdrop-blur-md z-10 flex-shrink-0">
+      <!-- Hamburger Menu for Mobile -->
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-600 p-2 rounded-lg hover:bg-purple-50 transition">
+        <i class="fa-solid fa-bars text-lg"></i>
+      </button>
+
       <div class="relative flex-1 max-w-xl">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search songs, artists, albums... (Ctrl+F)" class="w-full pl-11 pr-4 py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm"></i>
+        <input id="searchInput" oninput="handleSearch(this.value)" type="text" placeholder="Search tracks, artists..." class="w-full pl-9 sm:pl-11 pr-3 py-1.5 sm:py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
       </div>
 
-      <div class="flex items-center gap-3">
-        <button onclick="playRandom()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-brand-500/25 transition">
-          <i class="fa-solid fa-dice"></i> Play Something
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button onclick="playRandom()" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-brand-500/25 transition">
+          <i class="fa-solid fa-dice"></i> <span class="hidden sm:inline">Play Something</span>
         </button>
-        <div class="flex items-center gap-3 pl-3 border-l border-purple-100">
-          <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm" id="userAvatar">?</div>
-          <div class="flex flex-col">
+        <div class="flex items-center gap-2 pl-2 sm:pl-3 border-l border-purple-100">
+          <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs" id="userAvatar">?</div>
+          <div class="hidden sm:flex flex-col">
             <span class="text-xs font-bold text-slate-700" id="userNameLabel">Guest</span>
             <button onclick="logout()" class="text-[10px] text-slate-400 hover:text-rose-500 text-left font-semibold">Log out</button>
           </div>
@@ -132,46 +144,57 @@
     </header>
 
     <!-- Page Views Container -->
-    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-8 pb-32"></div>
+    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-8 pb-36"></div>
   </main>
 
-  <!-- Bottom Player Bar -->
-  <footer class="fixed bottom-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-6 flex items-center justify-between z-30 shadow-lg">
-    <!-- Song Info & Album Art -->
-    <div class="flex items-center gap-3.5 w-1/4 min-w-[240px]">
-      <div id="barArtWrapper" class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0 overflow-hidden relative">
-        <i id="barFallbackIcon" class="fa-solid fa-music"></i>
-        <img id="barCoverImg" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover" />
+  <!-- Bottom Player Bar (Mobile-Adaptive Layout) -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between z-30 shadow-lg gap-2 sm:gap-4">
+    <!-- Top Row on Mobile: Track Info + Play Controls -->
+    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 flex-1 min-w-0">
+      <div class="flex items-center gap-3 min-w-0 flex-1 sm:max-w-xs">
+        <div id="barArtWrapper" class="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg sm:text-xl shadow flex-shrink-0 overflow-hidden relative">
+          <i id="barFallbackIcon" class="fa-solid fa-music"></i>
+          <img id="barCoverImg" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h4 id="barTitle" class="text-xs sm:text-sm font-bold text-slate-800 truncate">No song playing</h4>
+          <p id="barArtist" class="text-[10px] sm:text-xs text-slate-400 truncate">Select a song from library</p>
+        </div>
+        <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition px-1">
+          <i class="fa-solid fa-heart text-base sm:text-lg"></i>
+        </button>
       </div>
-      <div class="min-w-0">
-        <h4 id="barTitle" class="text-sm font-bold text-slate-800 truncate">No song playing</h4>
-        <p id="barArtist" class="text-xs text-slate-400 truncate">Select a song from library</p>
-      </div>
-      <button onclick="toggleFavCurrent()" id="barFavBtn" class="ml-2 text-slate-300 hover:text-rose-500 transition">
-        <i class="fa-solid fa-heart text-lg"></i>
-      </button>
-    </div>
 
-    <!-- Center Play Controls -->
-    <div class="flex flex-col items-center gap-2 flex-1 max-w-2xl px-4">
-      <div class="flex items-center gap-5">
-        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-backward-step text-lg"></i></button>
-        <button onclick="togglePlay()" id="playPauseBtn" class="w-12 h-12 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-lg shadow-md shadow-brand-500/30 transition">
+      <!-- Quick Play button on Mobile Top Row -->
+      <div class="flex items-center gap-2 sm:hidden">
+        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 p-1"><i class="fa-solid fa-backward-step text-base"></i></button>
+        <button onclick="togglePlay()" id="playPauseBtnMobile" class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center text-sm shadow">
           <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-forward-step text-lg"></i></button>
+        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 p-1"><i class="fa-solid fa-forward-step text-base"></i></button>
       </div>
-      <div class="w-full flex items-center gap-3 text-[11px] font-semibold text-slate-400">
+    </div>
+
+    <!-- Center Scrub Bar / Playback Controls for Desktop -->
+    <div class="w-full sm:flex-1 sm:max-w-xl flex flex-col items-center gap-1">
+      <div class="hidden sm:flex items-center gap-5">
+        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-backward-step text-base"></i></button>
+        <button onclick="togglePlay()" id="playPauseBtn" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 transition">
+          <i class="fa-solid fa-play ml-0.5"></i>
+        </button>
+        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-forward-step text-base"></i></button>
+      </div>
+      <div class="w-full flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-semibold text-slate-400">
         <span id="currentTime">0:00</span>
         <input id="seekSlider" type="range" min="0" max="100" value="0" class="flex-1 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
         <span id="totalDuration">0:00</span>
       </div>
     </div>
 
-    <!-- Volume & Options -->
-    <div class="flex items-center justify-end gap-3 w-1/4">
-      <i class="fa-solid fa-volume-high text-slate-400 text-sm"></i>
-      <input id="volSlider" type="range" min="0" max="100" value="80" class="w-24 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
+    <!-- Volume on Desktop -->
+    <div class="hidden sm:flex items-center justify-end gap-2 w-1/4 max-w-[160px]">
+      <i class="fa-solid fa-volume-high text-slate-400 text-xs"></i>
+      <input id="volSlider" type="range" min="0" max="100" value="80" class="w-20 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
     </div>
   </footer>
 
@@ -198,7 +221,6 @@
     window.addEventListener('DOMContentLoaded', () => {
       setupAudioEvents();
 
-      // Check user session
       if (!config.username) {
         document.getElementById('authModal').classList.remove('hidden');
         switchAuthMode('login');
@@ -207,6 +229,20 @@
         initUserSession(config.username);
       }
     });
+
+    function toggleSidebar(forceState) {
+      const sb = document.getElementById('sidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      const shouldOpen = forceState !== undefined ? forceState : sb.classList.contains('-translate-x-full');
+
+      if (shouldOpen) {
+        sb.classList.remove('-translate-x-full');
+        bd.classList.remove('hidden');
+      } else {
+        sb.classList.add('-translate-x-full');
+        bd.classList.add('hidden');
+      }
+    }
 
     function getCoverUrl(trackPath) {
       return `${config.serverUrl}/api/cover?path=${encodeURIComponent(trackPath)}`;
@@ -230,7 +266,7 @@
         tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
       } else {
         title.innerText = 'Sign In to Continue';
-        sub.innerText = 'Enter your account credentials to access your music';
+        sub.innerText = 'Enter your credentials to stream your music';
         submitBtn.innerText = 'Sign In';
         tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
         tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
@@ -283,7 +319,7 @@
       if (cached) {
         library = JSON.parse(cached);
         currentPlaylist = [...library];
-        document.getElementById('libCount').innerText = `${library.length} songs in library`;
+        document.getElementById('libCount').innerText = `${library.length} songs`;
       }
       
       navigate('home');
@@ -308,7 +344,7 @@
         library = await res.json();
         currentPlaylist = [...library];
         localStorage.setItem('dunju_library_cache', JSON.stringify(library));
-        document.getElementById('libCount').innerText = `${library.length} songs in library`;
+        document.getElementById('libCount').innerText = `${library.length} songs`;
         document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 ml-auto ring-4 ring-emerald-100';
       } catch (e) {
         document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-rose-500 ml-auto ring-4 ring-rose-100';
@@ -334,13 +370,15 @@
         if (library.length > 0) playTrack(library[0]);
         return;
       }
+      const icon = audio.paused ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play ml-0.5"></i>';
       if (audio.paused) {
         audio.play();
-        document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
       } else {
         audio.pause();
-        document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
       }
+      document.getElementById('playPauseBtn').innerHTML = icon;
+      const mobBtn = document.getElementById('playPauseBtnMobile');
+      if (mobBtn) mobBtn.innerHTML = icon;
     }
 
     function playNext() {
@@ -364,11 +402,14 @@
     function updateBarInfo(track) {
       document.getElementById('barTitle').innerText = track.title;
       document.getElementById('barArtist').innerText = `${track.director} • ${track.album}`;
-      document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
-      const isFav = favorites.includes(track.path);
-      document.getElementById('barFavBtn').className = isFav ? 'ml-2 text-rose-500 transition' : 'ml-2 text-slate-300 hover:text-rose-500 transition';
+      const pauseIcon = '<i class="fa-solid fa-pause"></i>';
+      document.getElementById('playPauseBtn').innerHTML = pauseIcon;
+      const mobBtn = document.getElementById('playPauseBtnMobile');
+      if (mobBtn) mobBtn.innerHTML = pauseIcon;
 
-      // Load cover art dynamically into player bar
+      const isFav = favorites.includes(track.path);
+      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
+
       const barCoverImg = document.getElementById('barCoverImg');
       const barFallback = document.getElementById('barFallbackIcon');
       barCoverImg.src = getCoverUrl(track.path);
@@ -407,7 +448,7 @@
       const track = currentPlaylist[currentTrackIndex];
       toggleFav(track.path);
       const isFav = favorites.includes(track.path);
-      document.getElementById('barFavBtn').className = isFav ? 'ml-2 text-rose-500 transition' : 'ml-2 text-slate-300 hover:text-rose-500 transition';
+      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
     }
 
     function toggleFav(path) {
@@ -448,9 +489,11 @@
         audio.currentTime = (seek.value / 100) * audio.duration;
       };
 
-      vol.oninput = () => {
-        audio.volume = vol.value / 100;
-      };
+      if (vol) {
+        vol.oninput = () => {
+          audio.volume = vol.value / 100;
+        };
+      }
 
       audio.onended = () => playNext();
     }
@@ -473,7 +516,7 @@
         s.director.toLowerCase().includes(query) ||
         s.album.toLowerCase().includes(query)
       );
-      renderSongList(document.getElementById('contentContainer'), filtered, `Search Results for "${query}"`);
+      renderSongList(document.getElementById('contentContainer'), filtered, `Search: "${query}"`);
     }
 
     function navigate(page) {
@@ -503,27 +546,27 @@
       const recentTracks = history.map(path => library.find(s => s.path === path)).filter(Boolean).slice(0, 4);
 
       container.innerHTML = `
-        <div class="space-y-8">
+        <div class="space-y-6 sm:space-y-8">
           <div>
-            <h1 class="text-2xl font-black text-slate-800">Good Day, ${config.username} 👋</h1>
-            <p class="text-sm font-semibold text-slate-400 mt-1">${library.length} songs ready to stream</p>
+            <h1 class="text-xl sm:text-2xl font-black text-slate-800">Good Day, ${config.username} 👋</h1>
+            <p class="text-xs sm:text-sm font-semibold text-slate-400 mt-1">${library.length} songs ready to stream</p>
           </div>
 
           <div>
-            <h3 class="text-sm font-extrabold text-slate-700 tracking-wider uppercase mb-4 flex items-center gap-2">
+            <h3 class="text-xs sm:text-sm font-extrabold text-slate-700 tracking-wider uppercase mb-3 sm:mb-4 flex items-center gap-2">
               <i class="fa-solid fa-rotate-left text-brand-500"></i> Continue Listening
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               ${recentTracks.length ? recentTracks.map(t => `
-                <div onclick='playTrack(${JSON.stringify(t)})' class="group p-4 rounded-2xl bg-white border border-purple-100/70 hover:shadow-xl hover:shadow-brand-500/10 cursor-pointer transition">
-                  <div class="aspect-square w-full rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-800 flex items-center justify-center text-white text-3xl mb-3 shadow overflow-hidden relative">
+                <div onclick='playTrack(${JSON.stringify(t)})' class="group p-3 sm:p-4 rounded-2xl bg-white border border-purple-100/70 hover:shadow-xl hover:shadow-brand-500/10 cursor-pointer transition">
+                  <div class="aspect-square w-full rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-800 flex items-center justify-center text-white text-2xl sm:text-3xl mb-2 sm:mb-3 shadow overflow-hidden relative">
                     <i class="fa-solid fa-compact-disc group-hover:rotate-45 transition duration-300"></i>
                     <img src="${getCoverUrl(t.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
                   </div>
-                  <h4 class="font-bold text-sm text-slate-800 truncate">${t.title}</h4>
-                  <p class="text-xs text-slate-400 truncate mt-0.5">${t.director}</p>
+                  <h4 class="font-bold text-xs sm:text-sm text-slate-800 truncate">${t.title}</h4>
+                  <p class="text-[11px] text-slate-400 truncate mt-0.5">${t.director}</p>
                 </div>
-              `).join('') : '<p class="text-xs text-slate-400 col-span-4">No recent songs. Click Library to start playing!</p>'}
+              `).join('') : '<p class="text-xs text-slate-400 col-span-4">No recent songs. Start playing from Library or Folder View!</p>'}
             </div>
           </div>
         </div>
@@ -533,27 +576,27 @@
     function renderSongList(container, songs, title) {
       container.innerHTML = `
         <div>
-          <h2 class="text-xl font-black text-slate-800 mb-6">${title} (${songs.length})</h2>
+          <h2 class="text-lg sm:text-xl font-black text-slate-800 mb-4 sm:mb-6">${title} (${songs.length})</h2>
           <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden shadow-sm">
             <div class="divide-y divide-purple-50">
               ${songs.map((s, idx) => `
-                <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 group cursor-pointer transition" onclick='playTrack(${JSON.stringify(s)})'>
-                  <div class="flex items-center gap-4 min-w-0">
-                    <span class="text-xs font-bold text-slate-300 group-hover:text-brand-600 w-5">${idx + 1}</span>
-                    <div class="w-10 h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
+                <div class="p-3 sm:px-6 flex items-center justify-between hover:bg-brand-50/50 group cursor-pointer transition" onclick='playTrack(${JSON.stringify(s)})'>
+                  <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <span class="text-xs font-bold text-slate-300 group-hover:text-brand-600 w-4 sm:w-5">${idx + 1}</span>
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
                       <i class="fa-solid fa-music text-xs"></i>
                       <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
                     </div>
                     <div class="min-w-0">
-                      <h4 class="text-sm font-bold text-slate-800 truncate">${s.title}</h4>
-                      <p class="text-xs text-slate-400 truncate">${s.director} •${s.album}</p>
+                      <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${s.title}</h4>
+                      <p class="text-[11px] text-slate-400 truncate">${s.director} •${s.album}</p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-4">
-                    <button onclick="event.stopPropagation(); toggleFav('${s.path}'); this.querySelector('i').classList.toggle('text-rose-500');" class="text-slate-300 hover:text-rose-500">
-                      <i class="fa-solid fa-heart text-sm ${favorites.includes(s.path) ? 'text-rose-500' : ''}"></i>
+                  <div class="flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); toggleFav('${s.path}'); this.querySelector('i').classList.toggle('text-rose-500');" class="text-slate-300 hover:text-rose-500 p-1">
+                      <i class="fa-solid fa-heart text-xs sm:text-sm ${favorites.includes(s.path) ? 'text-rose-500' : ''}"></i>
                     </button>
-                    <span class="text-xs font-medium text-slate-400">${s.language}</span>
+                    <span class="hidden sm:inline text-xs font-medium text-slate-400">${s.language}</span>
                   </div>
                 </div>
               `).join('')}
@@ -568,22 +611,22 @@
 
       container.innerHTML = `
         <div>
-          <h2 class="text-xl font-black text-slate-800 mb-6"><i class="fa-solid fa-fire text-amber-500 mr-2"></i>Most Played Tracks</h2>
+          <h2 class="text-lg sm:text-xl font-black text-slate-800 mb-4 sm:mb-6"><i class="fa-solid fa-fire text-amber-500 mr-2"></i>Most Played Tracks</h2>
           <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden shadow-sm">
             ${sorted.length ? sorted.map((s, idx) => `
-              <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
-                <div class="flex items-center gap-4">
-                  <span class="text-sm font-bold text-brand-600 w-6">#${idx+1}</span>
-                  <div class="w-10 h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
+              <div class="p-3 sm:px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
+                <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <span class="text-xs sm:text-sm font-bold text-brand-600 w-5">#${idx+1}</span>
+                  <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
                     <i class="fa-solid fa-music text-xs"></i>
                     <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
                   </div>
-                  <div>
-                    <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
-                    <p class="text-xs text-slate-400">${s.director} •${s.album}</p>
+                  <div class="min-w-0">
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${s.title}</h4>
+                    <p class="text-[11px] text-slate-400 truncate">${s.director} •${s.album}</p>
                   </div>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold">${playCounts[s.path]} plays</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold whitespace-nowrap">${playCounts[s.path]} plays</span>
               </div>
             `).join('') : '<div class="p-8 text-center text-xs text-slate-400">No tracks played yet. Start streaming to populate your most played list!</div>'}
           </div>
@@ -591,7 +634,6 @@
       `;
     }
 
-    // Dynamic Tree Folder Navigation with Alphabetical Sorting
     function renderFolderView(container) {
       let levelTracks = library;
       currentFolderRoute.forEach((folder, idx) => {
@@ -603,7 +645,6 @@
       let folders = [];
       let songs = [];
 
-      // Extract and sort alphabetically (A-Z)
       if (currentFolderRoute.length === 0) {
         folders = [...new Set(library.map(s => s.language))].filter(Boolean)
                     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
@@ -618,31 +659,31 @@
       }
 
       container.innerHTML = `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
+        <div class="space-y-4 sm:space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 class="text-xl font-black text-slate-800 flex items-center gap-2"><i class="fa-solid fa-folder text-amber-400"></i> Server Directory Browser</h2>
-              <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mt-2">
-                <span class="cursor-pointer hover:text-brand-600" onclick="drillFolder(-1)">/home/dunjuai/Songs</span>
+              <h2 class="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2"><i class="fa-solid fa-folder text-amber-400"></i> Server Directory</h2>
+              <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-400 mt-1">
+                <span class="cursor-pointer hover:text-brand-600" onclick="drillFolder(-1)">Songs</span>
                 ${currentFolderRoute.map((f, i) => `
                   <span>/</span>
-                  <span class="cursor-pointer hover:text-brand-600 font-bold text-brand-600" onclick="drillFolder(${i})">${f}</span>
+                  <span class="cursor-pointer hover:text-brand-600 font-bold text-brand-600 truncate max-w-[120px]" onclick="drillFolder(${i})">${f}</span>
                 `).join('')}
               </div>
             </div>
-            <button onclick="fetchServerLibrary().then(() => renderFolderView(container))" class="px-3 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-slate-600 hover:bg-brand-50">Refresh</button>
+            <button onclick="fetchServerLibrary().then(() => renderFolderView(container))" class="self-start sm:self-auto px-3 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-slate-600 hover:bg-brand-50">Refresh</button>
           </div>
 
           ${folders.length ? `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               ${folders.map(folderName => `
-                <div onclick="enterFolder('${folderName.replace(/'/g, "\\'")}')" class="p-4 rounded-2xl bg-white border border-purple-100 hover:border-brand-400 hover:shadow-lg cursor-pointer transition flex items-center gap-3">
+                <div onclick="enterFolder('${folderName.replace(/'/g, "\\'")}')" class="p-3.5 sm:p-4 rounded-2xl bg-white border border-purple-100 hover:border-brand-400 hover:shadow-lg cursor-pointer transition flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg flex-shrink-0">
                     <i class="fa-solid fa-folder"></i>
                   </div>
                   <div class="min-w-0">
-                    <h4 class="text-sm font-bold text-slate-800 truncate">${folderName}</h4>
-                    <p class="text-[11px] text-slate-400">Browse &rarr;</p>
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${folderName}</h4>
+                    <p class="text-[10px] text-slate-400">Browse &rarr;</p>
                   </div>
                 </div>
               `).join('')}
@@ -652,16 +693,16 @@
           ${songs.length ? `
             <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden divide-y divide-purple-50">
               ${songs.map((s, idx) => `
-                <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
-                  <div class="flex items-center gap-4">
-                    <span class="text-xs font-bold text-slate-300 w-5">${idx+1}</span>
+                <div class="p-3 sm:px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-xs font-bold text-slate-300 w-4">${idx+1}</span>
                     <div class="w-8 h-8 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
                       <i class="fa-solid fa-music text-[10px]"></i>
                       <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
                     </div>
-                    <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${s.title}</h4>
                   </div>
-                  <i class="fa-solid fa-play text-xs text-brand-600"></i>
+                  <i class="fa-solid fa-play text-xs text-brand-600 ml-2"></i>
                 </div>
               `).join('')}
             </div>
@@ -687,8 +728,8 @@
     function renderSettings(container) {
       container.innerHTML = `
         <div class="max-w-2xl space-y-6">
-          <h2 class="text-xl font-black text-slate-800">Connection Settings</h2>
-          <div class="p-6 rounded-2xl bg-white border border-purple-100 space-y-4 shadow-sm">
+          <h2 class="text-lg sm:text-xl font-black text-slate-800">Connection Settings</h2>
+          <div class="p-4 sm:p-6 rounded-2xl bg-white border border-purple-100 space-y-4 shadow-sm">
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cloudflare Stream URL</label>
               <input id="setServerUrl" type="text" value="${config.serverUrl}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />

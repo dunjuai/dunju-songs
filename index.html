@@ -1,1764 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DunjuPlayer - Web Music Experience</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
             brand: {
-              50: '#f6f5fe',
-              100: '#edeaff',
-              200: '#ded7fe',
-              300: '#c5b6fd',
-              400: '#a68afa',
-              500: '#865cf6',
-              600: '#7852ff',
-              700: '#6836ed',
-              800: '#562bc7',
-              900: '#4825a3',
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
             },
-            canvas: '#f4f3fb',
-            panel: '#ffffff',
-            sidebar: '#fbfaff',
-            borderSoft: '#ece9f6',
-            textMain: '#24213d',
-            textMuted: '#7f7a9c',
-          },
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-          },
-          boxShadow: {
-            card: '0 4px 20px -2px rgba(120, 82, 255, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02)',
-            glow: '0 8px 24px -4px rgba(120, 82, 255, 0.35)',
-            subtle: '0 2px 10px rgba(0,0,0,0.03)',
+            surface: {
+              DEFAULT: '#f8fafc',
+              card: '#ffffff',
+              sidebar: '#fbfbfe'
+            }
           }
         }
       }
     }
   </script>
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #f4f3fb;
-      color: #24213d;
-      user-select: none;
-      -webkit-font-smoothing: antialiased;
-    }
-    /* Custom refined scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #ded7fe;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #a68afa;
-    }
-
-    /* Range slider custom styling */
-    input[type=range] {
-      -webkit-appearance: none;
-      background: #e4e0fa;
-      height: 4px;
-      border-radius: 9999px;
-      outline: none;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #7852ff;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-      box-shadow: 0 0 8px rgba(120, 82, 255, 0.5);
-    }
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.3);
-    }
-
-    .song-row:hover .play-overlay-icon {
-      opacity: 1;
-    }
-    .modal-backdrop {
-      background-color: rgba(24, 18, 48, 0.45);
-      backdrop-filter: blur(4px);
-    }
-    .pulse-ring {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .5; }
-    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 9999px; }
   </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden bg-[#f4f3fb] text-[#24213d]">
+<body class="bg-[#f4f3fb] text-slate-800 flex h-screen overflow-hidden select-none">
 
-  <div class="flex-1 flex overflow-hidden">
-    
-    <!-- LEFT SIDEBAR -->
-    <aside class="w-64 bg-[#fbfaff] border-r border-[#ece9f6] flex flex-col shrink-0 justify-between select-none">
-      <div class="flex flex-col h-full overflow-hidden">
-        <!-- Logo Header -->
-        <div class="px-5 py-4 flex items-center justify-between">
-          <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('home')">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-glow">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-              </svg>
-            </div>
-            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-brand-800 to-brand-600 bg-clip-text text-transparent">Dunju<span class="text-brand-600 font-semibold">Player</span></span>
-          </div>
-          <!-- Server Status Indicator -->
-          <button onclick="openServerModal()" title="Server & Sync Status" class="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600 relative transition-colors">
-            <span class="relative flex h-2.5 w-2.5">
-              <span id="serverPingDot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span id="serverStatusDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-          </button>
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r border-purple-100 flex flex-col justify-between flex-shrink-0 z-20">
+    <div class="p-6">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+          <i class="fa-solid fa-music text-lg"></i>
         </div>
+        <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
+        <span id="connIndicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 ml-auto ring-4 ring-emerald-100"></span>
+      </div>
 
-        <!-- Navigation Menu -->
-        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 text-sm font-medium" id="sidebarMenu">
-          <button onclick="switchView('home')" id="nav-home" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-brand-600 bg-brand-100/70 font-semibold transition-all">
-            <span class="text-lg">🏠</span> Home
-          </button>
-          <button onclick="switchView('library')" id="nav-library" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">🎵</span> Library
-          </button>
-          <button onclick="switchView('nowplaying')" id="nav-nowplaying" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">▶️</span> Now Playing
-          </button>
-          <button onclick="switchView('favorites')" id="nav-favorites" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">❤️</span> Favorites
-          </button>
-          <button onclick="switchView('mostplayed')" id="nav-mostplayed" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">🔥</span> Most Played
-          </button>
-          <button onclick="switchView('recentlyplayed')" id="nav-recentlyplayed" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">🕒</span> Recently Played
-          </button>
-          <button onclick="switchView('albums')" id="nav-albums" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">💿</span> Albums
-          </button>
-          <button onclick="switchView('artists')" id="nav-artists" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">🎤</span> Artists
-          </button>
-          <button onclick="switchView('folderview')" id="nav-folderview" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">📁</span> Folder View
-          </button>
-          <button onclick="switchView('playlists')" id="nav-playlists" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">📑</span> Playlists
-          </button>
-          <button onclick="switchView('ratings')" id="nav-ratings" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">⭐</span> Ratings
-          </button>
-          <button onclick="switchView('smart')" id="nav-smart" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">✨</span> Smart Collections
-          </button>
-          <button onclick="switchView('history')" id="nav-history" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">📈</span> History
-          </button>
-          <button onclick="switchView('duplicates')" id="nav-duplicates" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">🗂️</span> Duplicates
-          </button>
-          <button onclick="switchView('statistics')" id="nav-statistics" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">📊</span> Statistics
-          </button>
-          <button onclick="switchView('settings')" id="nav-settings" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-textMuted hover:text-brand-600 hover:bg-brand-50 transition-all">
-            <span class="text-lg">⚙️</span> Settings
-          </button>
-        </div>
+      <nav class="mt-8 space-y-1 text-sm font-semibold">
+        <button onclick="navigate('home')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="home">
+          <i class="fa-solid fa-house w-5 text-center text-slate-400"></i> Home
+        </button>
+        <button onclick="navigate('library')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="library">
+          <i class="fa-solid fa-music w-5 text-center text-slate-400"></i> Library
+        </button>
+        <button onclick="navigate('favorites')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="favorites">
+          <i class="fa-solid fa-heart w-5 text-center text-rose-500"></i> Favorites
+        </button>
+        <button onclick="navigate('mostplayed')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="mostplayed">
+          <i class="fa-solid fa-fire w-5 text-center text-amber-500"></i> Most Played
+        </button>
+        <button onclick="navigate('folders')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="folders">
+          <i class="fa-solid fa-folder w-5 text-center text-amber-400"></i> Folder View
+        </button>
+        <button onclick="navigate('settings')" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="settings">
+          <i class="fa-solid fa-gear w-5 text-center text-slate-400"></i> Settings
+        </button>
+      </nav>
+    </div>
 
-        <!-- Sidebar Footer Library count -->
-        <div class="px-5 py-3 border-t border-[#ece9f6] flex items-center justify-between text-xs text-textMuted">
-          <span id="footerCountText">2,186 songs in library</span>
-          <div class="w-2 h-2 rounded-full bg-brand-500"></div>
+    <div class="p-6 border-t border-purple-50 flex items-center justify-between text-xs text-slate-400">
+      <span id="libCount">0 songs in library</span>
+      <span class="px-2 py-0.5 rounded-md bg-purple-50 text-brand-600 font-bold">Ubuntu Live</span>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#faf9fe]">
+    <!-- Top Bar -->
+    <header class="h-16 px-8 flex items-center justify-between gap-4 border-b border-purple-100/60 bg-white/70 backdrop-blur-md z-10 flex-shrink-0">
+      <div class="relative flex-1 max-w-xl">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input id="searchInput" type="text" placeholder="Search songs, artists, albums... (Ctrl+F)" class="w-full pl-11 pr-4 py-2 rounded-xl bg-purple-50/50 border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 placeholder-slate-400 transition" />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="playRandom()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-brand-500/25 transition">
+          <i class="fa-solid fa-dice"></i> Play Something
+        </button>
+        <div class="flex items-center gap-2 pl-3 border-l border-purple-100">
+          <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm" id="userAvatar">S</div>
+          <span class="text-xs font-bold text-slate-700" id="userNameLabel">Swami</span>
         </div>
       </div>
-    </aside>
+    </header>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-[#f4f3fb]">
-      
-      <!-- TOP NAVIGATION BAR -->
-      <header class="h-16 px-6 flex items-center justify-between shrink-0 gap-4">
-        <!-- Global Search Bar -->
-        <div class="relative flex-1 max-w-2xl">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-600">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-          </div>
-          <input 
-            type="text" 
-            id="searchInput" 
-            oninput="handleGlobalSearch(this.value)"
-            placeholder="Search songs, artists, albums, filenames... (Ctrl+F)"
-            class="w-full pl-10 pr-20 py-2.5 text-sm bg-white/80 backdrop-blur-sm border border-brand-200/80 rounded-2xl text-textMain placeholder-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 shadow-sm transition-all"
-          >
-          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wider text-brand-400 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded-lg">Ctrl+F</span>
-        </div>
+    <!-- Page Views Container -->
+    <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-8 pb-32">
+      <!-- Dynamic Views Rendered by JS -->
+    </div>
+  </main>
 
-        <!-- Right action tools -->
-        <div class="flex items-center gap-3">
-          <button onclick="playRandomSong()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-sm font-semibold rounded-2xl shadow-glow transition-all active:scale-95">
-            <span>🎲</span> Play Something
-          </button>
-          <button onclick="openServerModal()" title="Ubuntu Server Configuration" class="w-10 h-10 rounded-2xl bg-white border border-[#ece9f6] flex items-center justify-center text-textMuted hover:text-brand-600 hover:border-brand-300 transition-all shadow-subtle">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
-            </svg>
-          </button>
-          <!-- User Profile Icon / Status -->
-          <div onclick="openAuthModal()" class="flex items-center gap-2 pl-2 pr-3 py-1 bg-white border border-[#ece9f6] rounded-2xl cursor-pointer hover:border-brand-300 shadow-subtle transition-all">
-            <div id="userAvatar" class="w-7 h-7 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-400 text-white font-bold text-xs flex items-center justify-center">
-              S
-            </div>
-            <span id="userTopName" class="text-xs font-bold text-textMain max-w-[90px] truncate">Swami</span>
-          </div>
-        </div>
-      </header>
-
-      <!-- SCROLLABLE VIEW CONTAINER -->
-      <div id="viewContainer" class="flex-1 overflow-y-auto px-8 pb-12 pt-2">
-        
-        <!-- ======================= HOME VIEW ======================= -->
-        <section id="view-home" class="space-y-7 block">
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-              <span id="greetingTitle">Good Afternoon, Swami</span> <span class="text-2xl">👋</span>
-            </h1>
-            <p class="text-xs text-textMuted mt-1" id="homeSubtitle">2186 songs ready to play</p>
-          </div>
-
-          <!-- RESUME LAST PLAYED BANNER CARD -->
-          <div id="resumeCard" class="bg-white rounded-3xl p-5 border border-brand-100 shadow-card flex items-center justify-between gap-4 max-w-2xl">
-            <div class="flex items-center gap-4 min-w-0">
-              <div class="relative w-20 h-20 rounded-2xl overflow-hidden bg-brand-50 shrink-0 shadow-sm">
-                <img id="resumeArt" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" class="w-full h-full object-cover" alt="Album Cover">
-                <div class="absolute inset-0 bg-black/10"></div>
-              </div>
-              <div class="min-w-0">
-                <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-sky-100 text-sky-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-                  <span>⏯️</span> RESUME LAST PLAYED
-                </div>
-                <h3 id="resumeTitle" class="text-base font-bold text-textMain truncate">Rasagulla - MassTamilan</h3>
-                <p id="resumeArtist" class="text-xs text-textMuted truncate">Jen Martin, Anirudh Ravichander - MassTamilan · at 3:46</p>
-              </div>
-            </div>
-            <button onclick="resumeCurrentTrack()" class="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 shadow-glow shrink-0 active:scale-95 transition-all">
-              <span>▶</span> Resume
-            </button>
-          </div>
-
-          <!-- CONTINUE LISTENING SECTION -->
-          <div class="space-y-3">
-            <h2 class="text-sm font-bold text-textMain flex items-center gap-2 tracking-wide">
-              <span>⏳</span> Continue Listening
-            </h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="continueListeningGrid">
-              <!-- Injected by JS -->
-            </div>
-          </div>
-
-          <!-- RECENTLY PLAYED SECTION -->
-          <div class="space-y-3 pt-2">
-            <h2 class="text-sm font-bold text-textMain flex items-center gap-2 tracking-wide">
-              <span>🕒</span> Recently Played
-            </h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="recentlyPlayedHomeGrid">
-              <!-- Injected by JS -->
-            </div>
-          </div>
-        </section>
-
-        <!-- ======================= MOST PLAYED VIEW ======================= -->
-        <section id="view-mostplayed" class="space-y-5 hidden">
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-              <span class="text-orange-500">🔥</span> Most Played
-            </h1>
-            <p class="text-xs text-textMuted mt-0.5">Your heavy rotation tracks on DunjuPlayer</p>
-          </div>
-
-          <!-- Filter Pills -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1">
-            <button onclick="filterMostPlayed('all10')" id="mp-all10" class="mp-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-brand-600 text-white shadow-sm transition-all">Top 10 · All Time</button>
-            <button onclick="filterMostPlayed('all50')" id="mp-all50" class="mp-pill px-4 py-1.5 rounded-full text-xs font-medium bg-white text-textMuted hover:text-brand-600 border border-[#ece9f6] transition-all">Top 50 · All Time</button>
-            <button onclick="filterMostPlayed('month10')" id="mp-month10" class="mp-pill px-4 py-1.5 rounded-full text-xs font-medium bg-white text-textMuted hover:text-brand-600 border border-[#ece9f6] transition-all">Top 10 · This Month</button>
-            <button onclick="filterMostPlayed('month50')" id="mp-month50" class="mp-pill px-4 py-1.5 rounded-full text-xs font-medium bg-white text-textMuted hover:text-brand-600 border border-[#ece9f6] transition-all">Top 50 · This Month</button>
-          </div>
-
-          <!-- Most Played Table -->
-          <div class="bg-white rounded-3xl border border-[#ece9f6] shadow-card overflow-hidden">
-            <table class="w-full text-left text-xs text-textMain">
-              <thead class="border-b border-[#ece9f6] text-[11px] text-textMuted font-bold uppercase tracking-wider bg-brand-50/50">
-                <tr>
-                  <th class="py-3 px-4 w-12 text-center">#</th>
-                  <th class="py-3 px-4">Song</th>
-                  <th class="py-3 px-4 hidden md:table-cell">Artist</th>
-                  <th class="py-3 px-4 text-center">Played</th>
-                  <th class="py-3 px-4 text-right hidden sm:table-cell">Last Played</th>
-                </tr>
-              </thead>
-              <tbody id="mostPlayedTableBody" class="divide-y divide-[#f2effb]">
-                <!-- Injected by JS -->
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ======================= FOLDER VIEW ======================= -->
-        <section id="view-folderview" class="space-y-5 hidden">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-                <span>📁</span> Server Directory Browser
-              </h1>
-              <p class="text-xs text-textMuted mt-0.5">Physical Ubuntu Server Path: <span id="currentPhysicalPath" class="font-mono text-brand-600 font-medium">/home/dunjuai/Songs/</span></p>
-            </div>
-            <button onclick="rescanFolderMock()" class="px-3.5 py-1.5 bg-white border border-brand-200 text-brand-600 hover:bg-brand-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-              <span>🔄</span> Refresh Folders
-            </button>
-          </div>
-
-          <!-- Breadcrumbs bar -->
-          <div id="folderBreadcrumbs" class="bg-white px-4 py-2.5 rounded-2xl border border-[#ece9f6] text-xs font-medium flex items-center gap-2 shadow-subtle overflow-x-auto">
-            <span class="text-textMuted cursor-pointer hover:text-brand-600" onclick="drillFolder('root')">/home/dunjuai/Songs</span>
-          </div>
-
-          <!-- Dynamic Folder / File Container -->
-          <div id="folderContentArea" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            <!-- Injected by JS -->
-          </div>
-        </section>
-
-        <!-- ======================= LIBRARY VIEW ======================= -->
-        <section id="view-library" class="space-y-4 hidden">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-                <span>🎵</span> Complete Music Library
-              </h1>
-              <p class="text-xs text-textMuted mt-0.5" id="libraryCountHeader">All scanned audio files on dunjuai server</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="sortLibrary('title')" class="px-3 py-1.5 bg-white border border-[#ece9f6] text-xs font-semibold rounded-xl hover:border-brand-400">Sort Title</button>
-              <button onclick="sortLibrary('artist')" class="px-3 py-1.5 bg-white border border-[#ece9f6] text-xs font-semibold rounded-xl hover:border-brand-400">Sort Artist</button>
-            </div>
-          </div>
-          <div class="bg-white rounded-3xl border border-[#ece9f6] shadow-card overflow-hidden">
-            <div id="fullLibraryList" class="divide-y divide-[#f2effb]">
-              <!-- Injected by JS -->
-            </div>
-          </div>
-        </section>
-
-        <!-- ======================= FAVORITES VIEW ======================= -->
-        <section id="view-favorites" class="space-y-4 hidden">
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-              <span class="text-rose-500">❤️</span> Favorites
-            </h1>
-            <p class="text-xs text-textMuted mt-0.5">Your starred love tracks</p>
-          </div>
-          <div class="bg-white rounded-3xl border border-[#ece9f6] shadow-card overflow-hidden">
-            <div id="favoritesList" class="divide-y divide-[#f2effb]">
-              <!-- Injected by JS -->
-            </div>
-          </div>
-        </section>
-
-        <!-- ======================= RECENTLY PLAYED VIEW ======================= -->
-        <section id="view-recentlyplayed" class="space-y-4 hidden">
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-              <span>🕒</span> Recently Played
-            </h1>
-            <p class="text-xs text-textMuted mt-0.5">Timeline of played tracks</p>
-          </div>
-          <div class="bg-white rounded-3xl border border-[#ece9f6] shadow-card overflow-hidden">
-            <div id="recentlyPlayedList" class="divide-y divide-[#f2effb]">
-              <!-- Injected by JS -->
-            </div>
-          </div>
-        </section>
-
-        <!-- ======================= SETTINGS VIEW ======================= -->
-        <section id="view-settings" class="space-y-6 max-w-4xl hidden">
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
-              <span>⚙️</span> Settings
-            </h1>
-            <p class="text-xs text-textMuted mt-0.5">Server configuration, database sync, and playback options</p>
-          </div>
-
-          <!-- Server & Cloud Sync Config Card -->
-          <div class="bg-white p-6 rounded-3xl border border-[#ece9f6] shadow-card space-y-4">
-            <div class="flex items-center gap-2 text-sm font-bold text-textMain">
-              <span>🖥️</span> Ubuntu Server & Hosting Connection
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label class="block font-semibold text-textMuted mb-1">Server Host / IP</label>
-                <input type="text" id="settingsServerHost" value="192.168.29.229" class="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-brand-50/30 text-textMain focus:outline-none focus:border-brand-500 font-mono">
-              </div>
-              <div>
-                <label class="block font-semibold text-textMuted mb-1">SSH / Stream Port</label>
-                <input type="text" id="settingsServerPort" value="5000" class="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-brand-50/30 text-textMain focus:outline-none focus:border-brand-500 font-mono">
-              </div>
-              <div>
-                <label class="block font-semibold text-textMuted mb-1">Music Root Directory</label>
-                <input type="text" id="settingsMusicPath" value="/home/dunjuai/Songs" class="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 bg-brand-50/30 text-textMain focus:outline-none focus:border-brand-500 font-mono">
-              </div>
-              <div>
-                <label class="block font-semibold text-textMuted mb-1">Target Domain Mapping</label>
-                <input type="text" id="settingsDomain" value="songs.dunjuai.com" readonly class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 font-mono cursor-not-allowed">
-              </div>
-            </div>
-            <div class="flex justify-end pt-2">
-              <button onclick="saveServerSettings()" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-xs shadow-glow transition-all">Save Server Configuration</button>
-            </div>
-          </div>
-
-          <!-- Library Management -->
-          <div class="bg-white p-6 rounded-3xl border border-[#ece9f6] shadow-card space-y-4">
-            <div class="flex items-center gap-2 text-sm font-bold text-textMain">
-              <span>📁</span> Library Scanner
-            </div>
-            <div class="flex items-center justify-between py-2 border-b border-[#f2effb]">
-              <div>
-                <div class="text-xs font-bold text-textMain">Auto Scan on Startup</div>
-                <div class="text-[11px] text-textMuted">Check /home/dunjuai/Songs for newly uploaded music on launch</div>
-              </div>
-              <input type="checkbox" checked class="w-5 h-5 accent-brand-600 rounded">
-            </div>
-            <div class="flex items-center justify-between py-2 border-b border-[#f2effb]">
-              <div>
-                <div class="text-xs font-bold text-textMain">Watch Directory Changes</div>
-                <div class="text-[11px] text-textMuted">Immediately index files pasted via SFTP/FileBrowser</div>
-              </div>
-              <input type="checkbox" checked class="w-5 h-5 accent-brand-600 rounded">
-            </div>
-            <div class="flex items-center justify-between pt-2">
-              <span id="scanStatusMsg" class="text-xs font-medium text-emerald-600 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Library indexed & up to date (2,186 files)
-              </span>
-              <button onclick="rescanLibraryUI()" id="rescanBtn" class="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-xl font-semibold text-xs shadow-glow transition-all flex items-center gap-2">
-                <span>🔄</span> Rescan Library Now
-              </button>
-            </div>
-          </div>
-
-          <!-- Database & Backup -->
-          <div class="bg-white p-6 rounded-3xl border border-[#ece9f6] shadow-card space-y-4">
-            <div class="flex items-center gap-2 text-sm font-bold text-textMain">
-              <span>💾</span> User Database & Stats Backup
-            </div>
-            <p class="text-xs text-textMuted">Export your play counts, favorites, and user sessions or reset user data on the server.</p>
-            <div class="flex flex-wrap gap-3">
-              <button onclick="backupDatabase()" class="px-4 py-2 bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-xs font-bold hover:bg-brand-100 transition-all">
-                Export DB (JSON)
-              </button>
-              <button onclick="restoreDatabasePrompt()" class="px-4 py-2 bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-xs font-bold hover:bg-brand-100 transition-all">
-                Restore Database
-              </button>
-              <button onclick="resetStats()" class="px-4 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-100 transition-all">
-                Reset Statistics
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- ======================= GENERIC / PLACEHOLDER VIEWS ======================= -->
-        <section id="view-generic" class="hidden">
-          <div class="text-center py-20">
-            <div class="w-16 h-16 mx-auto rounded-3xl bg-brand-100 text-brand-600 flex items-center justify-center text-3xl mb-4">✨</div>
-            <h2 id="genericTitle" class="text-xl font-bold text-textMain">Section View</h2>
-            <p class="text-xs text-textMuted max-w-sm mx-auto mt-2">Displaying curated collections and intelligent grouping from your server folder hierarchy.</p>
-            <div id="genericGrid" class="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 text-left"></div>
-          </div>
-        </section>
-
+  <!-- Bottom Player Bar -->
+  <footer class="fixed bottom-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-6 flex items-center justify-between z-30 shadow-lg">
+    <!-- Song Info -->
+    <div class="flex items-center gap-3 w-1/4 min-w-[220px]">
+      <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0">
+        <i class="fa-solid fa-music"></i>
       </div>
-    </main>
-  </div>
-
-  <!-- ======================= BOTTOM PERSISTENT PLAYER ======================= -->
-  <footer class="h-20 bg-white border-t border-[#ece9f6] px-6 flex items-center justify-between shrink-0 shadow-lg relative z-20">
-    
-    <!-- LEFT: Currently Playing Track Info -->
-    <div class="flex items-center gap-3 w-1/4 min-w-[200px]">
-      <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-brand-100 shrink-0 shadow-sm border border-[#edeaff]">
-        <img id="dockArt" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" class="w-full h-full object-cover" alt="Art">
+      <div class="min-w-0">
+        <h4 id="barTitle" class="text-sm font-bold text-slate-800 truncate">No song playing</h4>
+        <p id="barArtist" class="text-xs text-slate-400 truncate">Select a song from library</p>
       </div>
-      <div class="min-w-0 pr-2">
-        <h4 id="dockTitle" class="text-xs font-bold text-textMain truncate">Rasagulla - MassTamilan</h4>
-        <p id="dockArtist" class="text-[11px] text-textMuted truncate">Jen Martin, Anirudh Ravichander</p>
-      </div>
-      <button onclick="toggleFavoriteCurrent()" id="dockHeartBtn" class="text-textMuted hover:text-rose-500 transition-colors p-1 text-base">
-        🤍
+      <button onclick="toggleFavCurrent()" id="barFavBtn" class="ml-2 text-slate-300 hover:text-rose-500 transition">
+        <i class="fa-solid fa-heart text-lg"></i>
       </button>
     </div>
 
-    <!-- CENTER: Transport Controls & Scrubber -->
-    <div class="flex-1 max-w-2xl flex flex-col items-center justify-center px-4">
-      <!-- Buttons -->
-      <div class="flex items-center gap-5 mb-1.5">
-        <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle" class="text-textMuted hover:text-brand-600 transition-colors text-xs">
-          🔀
+    <!-- Center Play Controls -->
+    <div class="flex flex-col items-center gap-2 flex-1 max-w-2xl px-4">
+      <div class="flex items-center gap-5">
+        <button onclick="playPrev()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-backward-step text-lg"></i></button>
+        <button onclick="togglePlay()" id="playPauseBtn" class="w-12 h-12 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-lg shadow-md shadow-brand-500/30 transition">
+          <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <button onclick="playPrev()" title="Previous Track" class="text-brand-600 hover:text-brand-800 transition-colors text-sm">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-        </button>
-        <!-- Big Play Button -->
-        <button onclick="togglePlayPause()" id="masterPlayBtn" class="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-700 to-brand-500 hover:from-brand-800 hover:to-brand-600 text-white flex items-center justify-center shadow-glow transition-all active:scale-95">
-          <svg id="masterPlayIcon" class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-        <button onclick="playNext()" title="Next Track" class="text-brand-600 hover:text-brand-800 transition-colors text-sm">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-        </button>
-        <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat" class="text-textMuted hover:text-brand-600 transition-colors text-xs">
-          🔁
-        </button>
+        <button onclick="playNext()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-forward-step text-lg"></i></button>
       </div>
-
-      <!-- Scrubber Timeline -->
-      <div class="w-full flex items-center gap-3 text-[11px] font-medium text-textMuted">
-        <span id="currentTimeLabel" class="w-8 text-right font-mono text-[10px]">0:00</span>
-        <div class="relative flex-1 flex items-center">
-          <input 
-            type="range" 
-            id="timeScrubber" 
-            min="0" 
-            max="100" 
-            value="0" 
-            step="0.1" 
-            oninput="handleSeek(this.value)"
-            class="w-full cursor-pointer accent-brand-600"
-          >
-        </div>
-        <span id="durationTimeLabel" class="w-8 text-left font-mono text-[10px]">3:46</span>
+      <div class="w-full flex items-center gap-3 text-[11px] font-semibold text-slate-400">
+        <span id="currentTime">0:00</span>
+        <input id="seekSlider" type="range" min="0" max="100" value="0" class="flex-1 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
+        <span id="totalDuration">0:00</span>
       </div>
     </div>
 
-    <!-- RIGHT: Speed, Volume & Extra Tools -->
-    <div class="flex items-center justify-end gap-3 w-1/4 min-w-[200px]">
-      <!-- Playback Speed Picker -->
-      <div class="relative">
-        <select onchange="changeSpeed(this.value)" id="speedSelector" class="appearance-none bg-brand-50/70 border border-brand-200/80 rounded-xl px-2.5 py-1 text-[11px] font-bold text-brand-700 focus:outline-none cursor-pointer pr-5">
-          <option value="0.75">0.75x</option>
-          <option value="1" selected>1x</option>
-          <option value="1.25">1.25x</option>
-          <option value="1.5">1.5x</option>
-          <option value="2">2x</option>
-        </select>
-        <div class="pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-[8px] text-brand-600">▼</div>
-      </div>
-
-      <!-- Volume -->
-      <div class="flex items-center gap-2">
-        <button onclick="toggleMute()" id="volumeIconBtn" class="text-textMuted hover:text-brand-600 text-sm">
-          🔊
-        </button>
-        <input 
-          type="range" 
-          id="volumeSlider" 
-          min="0" 
-          max="1" 
-          step="0.01" 
-          value="0.8" 
-          oninput="handleVolume(this.value)"
-          class="w-20 cursor-pointer accent-brand-600"
-        >
-      </div>
+    <!-- Volume & Options -->
+    <div class="flex items-center justify-end gap-3 w-1/4">
+      <i class="fa-solid fa-volume-high text-slate-400 text-sm"></i>
+      <input id="volSlider" type="range" min="0" max="100" value="80" class="w-24 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
     </div>
   </footer>
 
-  <!-- ======================= USER AUTH MODAL ======================= -->
-  <div id="authModal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-7 max-w-sm w-full border border-brand-100 shadow-2xl relative">
-      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-textMuted hover:text-textMain text-lg font-bold">×</button>
-      <div class="text-center mb-5">
-        <div class="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-2 text-xl font-bold">👤</div>
-        <h3 id="authTitle" class="text-lg font-bold text-textMain">DunjuPlayer Account</h3>
-        <p id="authSubtitle" class="text-xs text-textMuted mt-0.5">Sign in to sync your play count & favorites</p>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">Username / Name</label>
-          <input type="text" id="authUsernameInput" value="Swami" placeholder="e.g. Swami" class="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-textMain focus:outline-none focus:border-brand-500">
-        </div>
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">Account PIN / Password</label>
-          <input type="password" id="authPasswordInput" value="••••••••" placeholder="Enter password" class="w-full px-3.5 py-2.5 rounded-xl border border-brand-200 text-textMain focus:outline-none focus:border-brand-500">
-        </div>
-        <div class="pt-2 flex flex-col gap-2">
-          <button onclick="loginUser()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-glow transition-all">Sign In</button>
-          <button onclick="registerUser()" class="w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-xl font-semibold transition-all">Create New User Profile</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ======================= SERVER CONNECTION MODAL ======================= -->
-  <div id="serverModal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-7 max-w-md w-full border border-brand-100 shadow-2xl relative">
-      <button onclick="closeServerModal()" class="absolute top-4 right-4 text-textMuted hover:text-textMain text-lg font-bold">×</button>
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center text-lg">🖥️</div>
-        <div>
-          <h3 class="text-base font-bold text-textMain">Ubuntu Server Credentials</h3>
-          <p class="text-xs text-textMuted">Sync with your secondary laptop music backend</p>
-        </div>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div class="p-3 bg-brand-50/70 rounded-2xl border border-brand-100 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-ring"></span>
-            <span class="font-bold text-brand-800">Connected: dunjuai @ 192.168.29.229</span>
-          </div>
-          <span class="text-[10px] font-bold text-brand-600 bg-white px-2 py-0.5 rounded-md border border-brand-200">Active</span>
-        </div>
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">Server IP Address</label>
-          <input type="text" id="modalServerIp" value="192.168.29.229" class="w-full px-3 py-2 rounded-xl border border-brand-200 font-mono">
-        </div>
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">SSH / SFTP Username</label>
-          <input type="text" id="modalServerUser" value="dunjuai" class="w-full px-3 py-2 rounded-xl border border-brand-200 font-mono">
-        </div>
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">Server Password</label>
-          <input type="password" id="modalServerPass" value="••••••••" class="w-full px-3 py-2 rounded-xl border border-brand-200 font-mono">
-        </div>
-        <div>
-          <label class="block font-semibold text-textMuted mb-1">Remote Library Path</label>
-          <input type="text" id="modalServerPath" value="/home/dunjuai/Songs" class="w-full px-3 py-2 rounded-xl border border-brand-200 font-mono">
-        </div>
-        <div class="pt-2">
-          <button onclick="testServerConnection()" id="testConnBtn" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-glow transition-all">
-            Test Connection & Scan Files
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <audio id="audioElement" preload="metadata"></audio>
 
   <script>
-    /* =========================================================================
-       DUNJUPLAYER DATA STORE & AUDIO SYNTHESIS ENGINE
-       ========================================================================= */
-
-    // Hierarchical catalog matching the user's Ubuntu server file structure:
-    // Language / Music Director / Album / Songs
-    const DEFAULT_SONGS = [
-      {
-        id: "s1",
-        title: "Rasagulla - MassTamilan",
-        artist: "Jen Martin, Anirudh Ravichander",
-        language: "Tamil",
-        director: "Anirudh Ravichander",
-        album: "Rasagulla Single",
-        duration: 226,
-        played: 2,
-        lastPlayed: "Sep 17, 2026, 8:38 PM",
-        path: "/home/dunjuai/Songs/Tamil/Anirudh Ravichander/Rasagulla Single/Rasagulla - MassTamilan.mp3",
-        art: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 440
-      },
-      {
-        id: "s2",
-        title: "Idhazhin Oram (The Innocence of Love)",
-        artist: "Anirudh Ravichander, Ajesh",
-        language: "Tamil",
-        director: "Anirudh Ravichander",
-        album: "3 (Moonu)",
-        duration: 204,
-        played: 3,
-        lastPlayed: "Sep 10, 2026, 7:34 PM",
-        path: "/home/dunjuai/Songs/Tamil/Anirudh Ravichander/3/Idhazhin Oram.mp3",
-        art: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 330
-      },
-      {
-        id: "s3",
-        title: "Kondayil Thaazhampoo",
-        artist: "S.P. Bala, S. Janaki",
-        language: "Tamil",
-        director: "Ilaiyaraaja",
-        album: "Annamalai",
-        duration: 278,
-        played: 2,
-        lastPlayed: "Aug 26, 2026, 8:15 PM",
-        path: "/home/dunjuai/Songs/Tamil/Ilaiyaraaja/Annamalai/Kondayil Thaazhampoo.mp3",
-        art: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 260
-      },
-      {
-        id: "s4",
-        title: "Nee Paartha Vizhigal",
-        artist: "Anirudh Ravichander, Vijay Yesudas, Shweta Mohan",
-        language: "Tamil",
-        director: "Anirudh Ravichander",
-        album: "3 (Moonu)",
-        duration: 198,
-        played: 2,
-        lastPlayed: "Aug 26, 2026, 7:49 PM",
-        path: "/home/dunjuai/Songs/Tamil/Anirudh Ravichander/3/Nee Paartha Vizhigal.mp3",
-        art: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 392
-      },
-      {
-        id: "s5",
-        title: "Bum Baa Diga Diga - MassTamilan",
-        artist: "Anirudh Ravichander, Vedan, Heisenberg",
-        language: "Tamil",
-        director: "Anirudh Ravichander",
-        album: "Coolie",
-        duration: 215,
-        played: 1,
-        lastPlayed: "Sep 13, 2026, 2:51 PM",
-        path: "/home/dunjuai/Songs/Tamil/Anirudh Ravichander/Coolie/Bum Baa Diga Diga.mp3",
-        art: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 520
-      },
-      {
-        id: "s6",
-        title: "Aura 10/10 - MassTamilan",
-        artist: "Hiphop Tamizha",
-        language: "Tamil",
-        director: "Hiphop Tamizha",
-        album: "Aura Single",
-        duration: 184,
-        played: 2,
-        lastPlayed: "Sep 17, 2026, 8:36 PM",
-        path: "/home/dunjuai/Songs/Tamil/Hiphop Tamizha/Aura Single/Aura 10 10.mp3",
-        art: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 494
-      },
-      {
-        id: "s7",
-        title: "Goindhamma - MassTamilan",
-        artist: "Kaushik Krish, Gana Vinoth, Gana Ulagam Dharani",
-        language: "Tamil",
-        director: "Santhosh Narayanan",
-        album: "Vada Chennai",
-        duration: 242,
-        played: 2,
-        lastPlayed: "Sep 17, 2026, 8:32 PM",
-        path: "/home/dunjuai/Songs/Tamil/Santhosh Narayanan/Vada Chennai/Goindhamma.mp3",
-        art: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 349
-      },
-      {
-        id: "s8",
-        title: "Adukku Malli - MassTamilan",
-        artist: "S. P. Balasubrahmanyam, S. Janaki",
-        language: "Tamil",
-        director: "Ilaiyaraaja",
-        album: "Karakattakkaran",
-        duration: 260,
-        played: 2,
-        lastPlayed: "Aug 26, 2026, 8:15 PM",
-        path: "/home/dunjuai/Songs/Tamil/Ilaiyaraaja/Karakattakkaran/Adukku Malli.mp3",
-        art: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 311
-      },
-      {
-        id: "s9",
-        title: "Thiruvaavaniraavu",
-        artist: "Unni Menon, Sithara Krishnakumar",
-        language: "Malayalam",
-        director: "Shaan Rahman",
-        album: "Jacobinte Swargarajyam",
-        duration: 231,
-        played: 2,
-        lastPlayed: "Aug 26, 2026, 7:49 PM",
-        path: "/home/dunjuai/Songs/Malayalam/Shaan Rahman/Jacobinte Swargarajyam/Thiruvaavaniraavu.mp3",
-        art: "https://images.unsplash.com/photo-1445985543469-25f0a0e44f04?w=300&auto=format&fit=crop&q=80",
-        favorite: false,
-        baseFreq: 415
-      },
-      {
-        id: "s10",
-        title: "Chinna Chinna Aasai",
-        artist: "Minmini",
-        language: "Tamil",
-        director: "A.R. Rahman",
-        album: "Roja",
-        duration: 295,
-        played: 5,
-        lastPlayed: "Sep 20, 2026, 1:12 PM",
-        path: "/home/dunjuai/Songs/Tamil/A.R. Rahman/Roja/Chinna Chinna Aasai.mp3",
-        art: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 370
-      },
-      {
-        id: "s11",
-        title: "Uyire Uyire",
-        artist: "Hariharan, K.S. Chithra",
-        language: "Tamil",
-        director: "A.R. Rahman",
-        album: "Bombay",
-        duration: 310,
-        played: 4,
-        lastPlayed: "Sep 19, 2026, 9:20 PM",
-        path: "/home/dunjuai/Songs/Tamil/A.R. Rahman/Bombay/Uyire Uyire.mp3",
-        art: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 440
-      },
-      {
-        id: "s12",
-        title: "Vaseegara",
-        artist: "Bombay Jayashri",
-        language: "Tamil",
-        director: "Harris Jayaraj",
-        album: "Minnale",
-        duration: 300,
-        played: 3,
-        lastPlayed: "Sep 18, 2026, 5:45 PM",
-        path: "/home/dunjuai/Songs/Tamil/Harris Jayaraj/Minnale/Vaseegara.mp3",
-        art: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80",
-        favorite: true,
-        baseFreq: 349
-      }
-    ];
-
-    // State management
-    let state = {
-      currentUser: "Swami",
-      songs: [],
-      currentSongIndex: 0,
-      isPlaying: false,
-      currentTime: 0,
-      duration: 226,
-      playbackRate: 1.0,
-      volume: 0.8,
-      isMuted: false,
-      isShuffle: false,
-      isRepeat: false,
-      activeView: "home",
-      mostPlayedFilter: "all10",
-      folderPath: ["root"],
-      server: {
-        host: "192.168.29.229",
-        port: "5000",
-        path: "/home/dunjuai/Songs",
-        status: "connected"
-      }
+    // App State
+    let config = {
+      serverUrl: localStorage.getItem('dunju_server') || 'https://stream.dunjuai.com',
+      username: localStorage.getItem('dunju_user') || 'Swami'
     };
 
-    // Load from local storage or initialize
-    function initStorage() {
-      const savedUser = localStorage.getItem("dunju_user");
-      if (savedUser) state.currentUser = savedUser;
+    let library = [];
+    let favorites = JSON.parse(localStorage.getItem('dunju_favs') || '[]');
+    let history = JSON.parse(localStorage.getItem('dunju_hist') || '[]');
+    let playCounts = JSON.parse(localStorage.getItem('dunju_counts') || '{}');
+    
+    let currentTrackIndex = -1;
+    let currentPlaylist = [];
+    let currentFolderRoute = []; // Breadcrumbs for folder view
 
-      const savedSongs = localStorage.getItem("dunju_songs_" + state.currentUser);
-      if (savedSongs) {
-        try {
-          state.songs = JSON.parse(savedSongs);
-        } catch(e) {
-          state.songs = [...DEFAULT_SONGS];
+    const audio = document.getElementById('audioElement');
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('userNameLabel').innerText = config.username;
+      document.getElementById('userAvatar').innerText = config.username[0].toUpperCase();
+      
+      // Load cached library
+      const cached = localStorage.getItem('dunju_library_cache');
+      if (cached) {
+        library = JSON.parse(cached);
+        currentPlaylist = [...library];
+        document.getElementById('libCount').innerText = `${library.length} songs in library`;
+      }
+      
+      navigate('home');
+      fetchServerLibrary(); // Auto-scan
+      setupAudioEvents();
+    });
+
+    // Navigation
+    function navigate(page) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.dataset.page === page) {
+          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition bg-brand-50 text-brand-600 font-bold';
+          btn.querySelector('i').classList.add('text-brand-600');
+        } else {
+          btn.className = 'nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600';
+          btn.querySelector('i').classList.remove('text-brand-600');
         }
-      } else {
-        state.songs = [...DEFAULT_SONGS];
+      });
+
+      const container = document.getElementById('contentContainer');
+      if (page === 'home') renderHome(container);
+      if (page === 'library') renderSongList(container, library, 'All Library Songs');
+      if (page === 'favorites') {
+        const favSongs = library.filter(s => favorites.includes(s.path));
+        renderSongList(container, favSongs, 'Favorite Tracks');
       }
-      updateUserHeader();
+      if (page === 'mostplayed') renderMostPlayed(container);
+      if (page === 'folders') renderFolderView(container);
+      if (page === 'settings') renderSettings(container);
     }
 
-    function persistState() {
-      localStorage.setItem("dunju_songs_" + state.currentUser, JSON.stringify(state.songs));
-      localStorage.setItem("dunju_user", state.currentUser);
-    }
-
-    /* =========================================================================
-       WEB AUDIO SYNTHESIS ENGINE (Plays Melodic Harmonic Audio in Browser)
-       ========================================================================= */
-    let audioCtx = null;
-    let osc1 = null;
-    let osc2 = null;
-    let gainNode = null;
-    let timerInterval = null;
-
-    function initWebAudio() {
-      if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContextClass();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
-    function startSynthesizer(freq = 440) {
-      initWebAudio();
-      stopSynthesizer();
-
-      gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(state.isMuted ? 0 : state.volume * 0.15, audioCtx.currentTime);
-      gainNode.connect(audioCtx.destination);
-
-      // Main melodic oscillator
-      osc1 = audioCtx.createOscillator();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-      // Warm harmonic sub-oscillator
-      osc2 = audioCtx.createOscillator();
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(freq * 0.5, audioCtx.currentTime);
-
-      // Soft LFO modulation for pleasant analog warmth
-      const lfo = audioCtx.createOscillator();
-      lfo.frequency.setValueAtTime(2, audioCtx.currentTime);
-      const lfoGain = audioCtx.createGain();
-      lfoGain.gain.setValueAtTime(8, audioCtx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc1.frequency);
-      lfo.start();
-
-      osc1.connect(gainNode);
-      osc2.connect(gainNode);
-
-      osc1.start();
-      osc2.start();
-    }
-
-    function stopSynthesizer() {
+    // Server Library Sync
+    async function fetchServerLibrary() {
       try {
-        if (osc1) { osc1.stop(); osc1.disconnect(); osc1 = null; }
-        if (osc2) { osc2.stop(); osc2.disconnect(); osc2 = null; }
-      } catch (e) {}
-    }
-
-    /* =========================================================================
-       PLAYBACK CONTROLLER
-       ========================================================================= */
-    function playTrack(index) {
-      if (index < 0 || index >= state.songs.length) return;
-      state.currentSongIndex = index;
-      const song = state.songs[index];
-      state.duration = song.duration;
-      state.currentTime = 0;
-      state.isPlaying = true;
-
-      // Update play counts & history
-      song.played += 1;
-      const now = new Date();
-      song.lastPlayed = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ", " + 
-                        now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      persistState();
-
-      // Audio engine
-      startSynthesizer(song.baseFreq || 440);
-
-      // Reset timer
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        if (state.isPlaying) {
-          state.currentTime += 1 * state.playbackRate;
-          if (state.currentTime >= state.duration) {
-            if (state.isRepeat) {
-              state.currentTime = 0;
-            } else {
-              playNext();
-              return;
-            }
-          }
-          updatePlaybackUI();
-        }
-      }, 1000);
-
-      updatePlaybackUI();
-      renderAllViews();
-    }
-
-    function togglePlayPause() {
-      if (state.isPlaying) {
-        state.isPlaying = false;
-        stopSynthesizer();
-        clearInterval(timerInterval);
-      } else {
-        if (state.songs.length === 0) return;
-        state.isPlaying = true;
-        const currentSong = state.songs[state.currentSongIndex];
-        startSynthesizer(currentSong.baseFreq || 440);
-        timerInterval = setInterval(() => {
-          if (state.isPlaying) {
-            state.currentTime += 1 * state.playbackRate;
-            if (state.currentTime >= state.duration) {
-              playNext();
-            }
-            updatePlaybackUI();
-          }
-        }, 1000);
+        const res = await fetch(`${config.serverUrl}/api/library`);
+        if (!res.ok) throw new Error('Network error');
+        library = await res.json();
+        currentPlaylist = [...library];
+        localStorage.setItem('dunju_library_cache', JSON.stringify(library));
+        document.getElementById('libCount').innerText = `${library.length} songs in library`;
+        document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 ml-auto ring-4 ring-emerald-100';
+      } catch (e) {
+        console.warn('Failed to reach server:', e);
+        document.getElementById('connIndicator').className = 'w-2.5 h-2.5 rounded-full bg-rose-500 ml-auto ring-4 ring-rose-100';
       }
-      updatePlaybackUI();
     }
 
-    function resumeCurrentTrack() {
-      if (!state.isPlaying) {
-        togglePlayPause();
+    // Audio Playback
+    function playTrack(track, playlist = null) {
+      if (playlist) currentPlaylist = playlist;
+      currentTrackIndex = currentPlaylist.findIndex(t => t.path === track.path);
+
+      // Clean stream URL
+      const streamUrl = `${config.serverUrl}/${track.path.split('/').map(encodeURIComponent).join('/')}`;
+      audio.src = streamUrl;
+      audio.play().then(() => {
+        updateBarInfo(track);
+        recordPlay(track);
+      }).catch(err => {
+        console.error("Playback failed for:", streamUrl, err);
+      });
+    }
+
+    function togglePlay() {
+      if (!audio.src) {
+        if (library.length > 0) playTrack(library[0]);
+        return;
+      }
+      if (audio.paused) {
+        audio.play();
+        document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+      } else {
+        audio.pause();
+        document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
       }
     }
 
     function playNext() {
-      if (state.isShuffle) {
-        const rand = Math.floor(Math.random() * state.songs.length);
-        playTrack(rand);
-      } else {
-        const nextIndex = (state.currentSongIndex + 1) % state.songs.length;
-        playTrack(nextIndex);
-      }
+      if (!currentPlaylist.length) return;
+      currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+      playTrack(currentPlaylist[currentTrackIndex]);
     }
 
     function playPrev() {
-      if (state.currentTime > 3) {
-        state.currentTime = 0;
-        updatePlaybackUI();
-        return;
-      }
-      const prevIndex = (state.currentSongIndex - 1 + state.songs.length) % state.songs.length;
-      playTrack(prevIndex);
+      if (!currentPlaylist.length) return;
+      currentTrackIndex = (currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+      playTrack(currentPlaylist[currentTrackIndex]);
     }
 
-    function playRandomSong() {
-      const rand = Math.floor(Math.random() * state.songs.length);
-      playTrack(rand);
+    function playRandom() {
+      if (!library.length) return;
+      const rand = Math.floor(Math.random() * library.length);
+      playTrack(library[rand], library);
     }
 
-    function handleSeek(val) {
-      state.currentTime = (val / 100) * state.duration;
-      updatePlaybackUI();
+    function updateBarInfo(track) {
+      document.getElementById('barTitle').innerText = track.title;
+      document.getElementById('barArtist').innerText = `${track.director} • ${track.album}`;
+      document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+      const isFav = favorites.includes(track.path);
+      document.getElementById('barFavBtn').className = isFav ? 'ml-2 text-rose-500 transition' : 'ml-2 text-slate-300 hover:text-rose-500 transition';
     }
 
-    function handleVolume(val) {
-      state.volume = parseFloat(val);
-      state.isMuted = false;
-      if (gainNode && audioCtx) {
-        gainNode.gain.setValueAtTime(state.volume * 0.15, audioCtx.currentTime);
-      }
-      updateVolumeUI();
+    function recordPlay(track) {
+      playCounts[track.path] = (playCounts[track.path] || 0) + 1;
+      localStorage.setItem('dunju_counts', JSON.stringify(playCounts));
+
+      history = history.filter(p => p !== track.path);
+      history.unshift(track.path);
+      if (history.length > 50) history.pop();
+      localStorage.setItem('dunju_hist', JSON.stringify(history));
+
+      // Push sync to server database
+      fetch(`${config.serverUrl}/api/sync`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: config.username,
+          favorites: favorites,
+          history: history,
+          play_counts: playCounts
+        })
+      }).catch(() => {});
     }
 
-    function toggleMute() {
-      state.isMuted = !state.isMuted;
-      if (gainNode && audioCtx) {
-        gainNode.gain.setValueAtTime(state.isMuted ? 0 : state.volume * 0.15, audioCtx.currentTime);
-      }
-      updateVolumeUI();
+    function toggleFavCurrent() {
+      if (currentTrackIndex === -1) return;
+      const track = currentPlaylist[currentTrackIndex];
+      toggleFav(track.path);
+      const isFav = favorites.includes(track.path);
+      document.getElementById('barFavBtn').className = isFav ? 'ml-2 text-rose-500 transition' : 'ml-2 text-slate-300 hover:text-rose-500 transition';
     }
 
-    function changeSpeed(val) {
-      state.playbackRate = parseFloat(val);
-    }
-
-    function toggleShuffle() {
-      state.isShuffle = !state.isShuffle;
-      const el = document.getElementById("shuffleBtn");
-      if (state.isShuffle) {
-        el.classList.add("text-brand-600", "font-bold");
-        el.classList.remove("text-textMuted");
+    function toggleFav(path) {
+      if (favorites.includes(path)) {
+        favorites = favorites.filter(p => p !== path);
       } else {
-        el.classList.remove("text-brand-600", "font-bold");
-        el.classList.add("text-textMuted");
+        favorites.push(path);
       }
+      localStorage.setItem('dunju_favs', JSON.stringify(favorites));
     }
 
-    function toggleRepeat() {
-      state.isRepeat = !state.isRepeat;
-      const el = document.getElementById("repeatBtn");
-      if (state.isRepeat) {
-        el.classList.add("text-brand-600", "font-bold");
-        el.classList.remove("text-textMuted");
-      } else {
-        el.classList.remove("text-brand-600", "font-bold");
-        el.classList.add("text-textMuted");
-      }
+    // Audio Elements Event Binding
+    function setupAudioEvents() {
+      const seek = document.getElementById('seekSlider');
+      const cur = document.getElementById('currentTime');
+      const tot = document.getElementById('totalDuration');
+      const vol = document.getElementById('volSlider');
+
+      audio.ontimeupdate = () => {
+        if (!audio.duration) return;
+        seek.value = (audio.currentTime / audio.duration) * 100;
+        cur.innerText = formatTime(audio.currentTime);
+        tot.innerText = formatTime(audio.duration);
+      };
+
+      seek.oninput = () => {
+        if (!audio.duration) return;
+        audio.currentTime = (seek.value / 100) * audio.duration;
+      };
+
+      vol.oninput = () => {
+        audio.volume = vol.value / 100;
+      };
+
+      audio.onended = () => playNext();
     }
 
-    function toggleFavoriteCurrent() {
-      const song = state.songs[state.currentSongIndex];
-      song.favorite = !song.favorite;
-      persistState();
-      updatePlaybackUI();
-      renderAllViews();
-    }
-
-    function toggleFavoriteSongId(id, e) {
-      if (e) e.stopPropagation();
-      const song = state.songs.find(s => s.id === id);
-      if (song) {
-        song.favorite = !song.favorite;
-        persistState();
-        updatePlaybackUI();
-        renderAllViews();
-      }
-    }
-
-    // Format seconds into MM:SS
-    function fmtTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
+    function formatTime(secs) {
+      if (isNaN(secs)) return '0:00';
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // Sync Bottom Player Bar DOM
-    function updatePlaybackUI() {
-      const current = state.songs[state.currentSongIndex] || DEFAULT_SONGS[0];
-      
-      // Track metadata in player dock
-      document.getElementById("dockTitle").innerText = current.title;
-      document.getElementById("dockArtist").innerText = current.artist;
-      document.getElementById("dockArt").src = current.art;
-      document.getElementById("dockHeartBtn").innerText = current.favorite ? "❤️" : "🤍";
+    // Views
+    function renderHome(container) {
+      const recentTracks = history.map(path => library.find(s => s.path === path)).filter(Boolean).slice(0, 4);
 
-      // Resume card on Home
-      const rTitle = document.getElementById("resumeTitle");
-      if (rTitle) {
-        rTitle.innerText = current.title;
-        document.getElementById("resumeArtist").innerText = `${current.artist} · at ${fmtTime(current.duration)}`;
-        document.getElementById("resumeArt").src = current.art;
-      }
-
-      // Time & scrubber
-      document.getElementById("currentTimeLabel").innerText = fmtTime(state.currentTime);
-      document.getElementById("durationTimeLabel").innerText = fmtTime(state.duration);
-      const pct = (state.currentTime / state.duration) * 100 || 0;
-      document.getElementById("timeScrubber").value = pct;
-
-      // Play/Pause Master Icon
-      const playIcon = document.getElementById("masterPlayIcon");
-      if (state.isPlaying) {
-        playIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
-      } else {
-        playIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
-      }
-    }
-
-    function updateVolumeUI() {
-      const slider = document.getElementById("volumeSlider");
-      const icon = document.getElementById("volumeIconBtn");
-      slider.value = state.isMuted ? 0 : state.volume;
-      if (state.isMuted || state.volume === 0) {
-        icon.innerText = "🔇";
-      } else if (state.volume < 0.5) {
-        icon.innerText = "🔉";
-      } else {
-        icon.innerText = "🔊";
-      }
-    }
-
-    /* =========================================================================
-       VIEW ROUTING & RENDERING
-       ========================================================================= */
-    const VIEWS = ['home', 'mostplayed', 'folderview', 'library', 'favorites', 'recentlyplayed', 'settings', 'generic'];
-
-    function switchView(viewName, meta) {
-      state.activeView = viewName;
-
-      // Toggle active states in sidebar
-      document.querySelectorAll(".nav-item").forEach(btn => {
-        btn.classList.remove("text-brand-600", "bg-brand-100/70", "font-semibold");
-        btn.classList.add("text-textMuted");
-      });
-      const currentNav = document.getElementById("nav-" + viewName);
-      if (currentNav) {
-        currentNav.classList.add("text-brand-600", "bg-brand-100/70", "font-semibold");
-        currentNav.classList.remove("text-textMuted");
-      }
-
-      // Hide all containers
-      VIEWS.forEach(v => {
-        const el = document.getElementById("view-" + v);
-        if (el) el.classList.add("hidden");
-      });
-
-      // Special generic fallbacks for albums, artists, etc.
-      if (['albums', 'artists', 'playlists', 'ratings', 'smart', 'duplicates', 'statistics', 'nowplaying'].includes(viewName)) {
-        renderGenericView(viewName);
-        document.getElementById("view-generic").classList.remove("hidden");
-        return;
-      }
-
-      const activeEl = document.getElementById("view-" + viewName);
-      if (activeEl) {
-        activeEl.classList.remove("hidden");
-      }
-
-      renderAllViews();
-    }
-
-    function renderAllViews() {
-      renderHome();
-      renderMostPlayed();
-      renderFolderView();
-      renderLibraryList();
-      renderFavorites();
-      renderRecentlyPlayed();
-      updateCounts();
-    }
-
-    function updateCounts() {
-      const count = state.songs.length;
-      document.getElementById("footerCountText").innerText = `${count.toLocaleString()} songs in library`;
-      const sub = document.getElementById("homeSubtitle");
-      if (sub) sub.innerText = `${count.toLocaleString()} songs ready to play`;
-    }
-
-    // HOME CARDS
-    function renderHome() {
-      // Continue listening (top 5 songs)
-      const continueCont = document.getElementById("continueListeningGrid");
-      if (continueCont) {
-        continueCont.innerHTML = state.songs.slice(0, 5).map((song, i) => `
-          <div onclick="playTrack(${state.songs.indexOf(song)})" class="group bg-white p-3.5 rounded-3xl border border-[#ece9f6] shadow-card hover:shadow-glow hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between">
-            <div class="relative w-full aspect-square rounded-2xl overflow-hidden bg-brand-50 mb-3">
-              <img src="${song.art}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Cover">
-              <div class="absolute inset-0 bg-brand-900/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <div class="w-10 h-10 rounded-full bg-white text-brand-600 flex items-center justify-center shadow-lg font-bold">▶</div>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-bold text-xs text-textMain truncate">${song.title}</h4>
-              <p class="text-[11px] text-textMuted truncate mt-0.5">${song.artist}</p>
-            </div>
+      container.innerHTML = `
+        <div class="space-y-8">
+          <div>
+            <h1 class="text-2xl font-black text-slate-800">Good Day, ${config.username} 👋</h1>
+            <p class="text-sm font-semibold text-slate-400 mt-1">${library.length} songs ready to stream</p>
           </div>
-        `).join('');
-      }
 
-      // Recently played grid
-      const recentCont = document.getElementById("recentlyPlayedHomeGrid");
-      if (recentCont) {
-        const sorted = [...state.songs].sort((a,b) => (b.played || 0) - (a.played || 0)).slice(0, 5);
-        recentCont.innerHTML = sorted.map(song => `
-          <div onclick="playTrack(${state.songs.indexOf(song)})" class="group bg-white p-3.5 rounded-3xl border border-[#ece9f6] shadow-card hover:shadow-glow hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between">
-            <div class="relative w-full aspect-square rounded-2xl overflow-hidden bg-brand-50 mb-3">
-              <img src="${song.art}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Cover">
-              <div class="absolute inset-0 bg-brand-900/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <div class="w-10 h-10 rounded-full bg-white text-brand-600 flex items-center justify-center shadow-lg font-bold">▶</div>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-bold text-xs text-textMain truncate">${song.title}</h4>
-              <p class="text-[11px] text-textMuted truncate mt-0.5">${song.artist}</p>
-            </div>
-          </div>
-        `).join('');
-      }
-    }
-
-    // MOST PLAYED TABLE
-    function filterMostPlayed(filterType) {
-      state.mostPlayedFilter = filterType;
-      document.querySelectorAll(".mp-pill").forEach(p => {
-        p.classList.remove("bg-brand-600", "text-white", "shadow-sm");
-        p.classList.add("bg-white", "text-textMuted");
-      });
-      const activePill = document.getElementById("mp-" + filterType);
-      if (activePill) {
-        activePill.classList.add("bg-brand-600", "text-white", "shadow-sm");
-        activePill.classList.remove("bg-white", "text-textMuted");
-      }
-      renderMostPlayed();
-    }
-
-    function renderMostPlayed() {
-      const tbody = document.getElementById("mostPlayedTableBody");
-      if (!tbody) return;
-
-      let list = [...state.songs].sort((a, b) => b.played - a.played);
-      const limit = state.mostPlayedFilter.includes("10") ? 10 : 50;
-      list = list.slice(0, limit);
-
-      tbody.innerHTML = list.map((song, idx) => {
-        const origIndex = state.songs.indexOf(song);
-        const isCurrent = origIndex === state.currentSongIndex;
-        return `
-          <tr onclick="playTrack(${origIndex})" class="song-row cursor-pointer transition-colors ${isCurrent ? 'bg-brand-100/60 font-semibold' : 'hover:bg-brand-50/70'}">
-            <td class="py-3 px-4 text-center text-textMuted font-mono text-[11px]">${idx + 1}</td>
-            <td class="py-3 px-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl overflow-hidden bg-brand-100 shrink-0">
-                  <img src="${song.art}" class="w-full h-full object-cover">
+          <!-- Continue Listening -->
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-700 tracking-wider uppercase mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-rotate-left text-brand-500"></i> Continue Listening
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              ${recentTracks.length ? recentTracks.map(t => `
+                <div onclick='playTrack(${JSON.stringify(t)})' class="group p-4 rounded-2xl bg-white border border-purple-100/70 hover:shadow-xl hover:shadow-brand-500/10 cursor-pointer transition">
+                  <div class="aspect-square w-full rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-800 flex items-center justify-center text-white text-3xl mb-3 shadow">
+                    <i class="fa-solid fa-compact-disc group-hover:rotate-45 transition duration-300"></i>
+                  </div>
+                  <h4 class="font-bold text-sm text-slate-800 truncate">${t.title}</h4>
+                  <p class="text-xs text-slate-400 truncate mt-0.5">${t.director}</p>
                 </div>
-                <div class="min-w-0">
-                  <div class="text-xs font-bold text-textMain truncate">${song.title}</div>
-                  <div class="text-[11px] text-textMuted md:hidden truncate">${song.artist}</div>
-                </div>
-              </div>
-            </td>
-            <td class="py-3 px-4 text-textMuted text-xs hidden md:table-cell truncate max-w-[200px]">${song.artist}</td>
-            <td class="py-3 px-4 text-center">
-              <span class="inline-block px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold text-[11px]">
-                ${song.played} ${song.played === 1 ? 'time' : 'times'}
-              </span>
-            </td>
-            <td class="py-3 px-4 text-right text-textMuted text-[11px] hidden sm:table-cell font-mono">${song.lastPlayed || 'Just now'}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // FOLDER VIEW: Hierarchical Tree Navigation
-    // Language -> Music Director -> Album -> Songs
-    function renderFolderView() {
-      const container = document.getElementById("folderContentArea");
-      const breadcrumbs = document.getElementById("folderBreadcrumbs");
-      const currentPhysical = document.getElementById("currentPhysicalPath");
-      if (!container) return;
-
-      const path = state.folderPath; // e.g. ['root'], ['root', 'Tamil'], ['root', 'Tamil', 'A.R. Rahman']
-
-      // Build breadcrumbs
-      breadcrumbs.innerHTML = path.map((segment, index) => {
-        const isLast = index === path.length - 1;
-        const displayName = segment === 'root' ? '/home/dunjuai/Songs' : segment;
-        return `
-          <span class="${isLast ? 'text-brand-600 font-bold' : 'text-textMuted cursor-pointer hover:text-brand-600'}" 
-                onclick="drillFolderToIndex(${index})">${displayName}</span>
-          ${!isLast ? '<span class="text-brand-300">/</span>' : ''}
-        `;
-      }).join('');
-
-      currentPhysical.innerText = '/home/dunjuai/Songs/' + path.slice(1).join('/');
-
-      // Level 0: Show Languages (Tamil, Malayalam, Telugu, Hindi)
-      if (path.length === 1) {
-        const languages = [...new Set(state.songs.map(s => s.language))];
-        container.innerHTML = languages.map(lang => {
-          const count = state.songs.filter(s => s.language === lang).length;
-          return `
-            <div onclick="drillFolder('${lang}')" class="bg-white p-4 rounded-2xl border border-[#ece9f6] shadow-card hover:border-brand-300 hover:shadow-glow cursor-pointer transition-all flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center text-xl">📁</div>
-                <div>
-                  <h4 class="font-bold text-xs text-textMain">${lang}</h4>
-                  <p class="text-[11px] text-textMuted">${count} songs</p>
-                </div>
-              </div>
-              <span class="text-brand-400 text-sm">→</span>
+              `).join('') : '<p class="text-xs text-slate-400 col-span-4">No recent songs. Click Library to start playing!</p>'}
             </div>
-          `;
-        }).join('');
-      } 
-      // Level 1: Show Music Directors for selected language
-      else if (path.length === 2) {
-        const lang = path[1];
-        const directors = [...new Set(state.songs.filter(s => s.language === lang).map(s => s.director))];
-        container.innerHTML = directors.map(dir => {
-          const count = state.songs.filter(s => s.language === lang && s.director === dir).length;
-          return `
-            <div onclick="drillFolder('${dir}')" class="bg-white p-4 rounded-2xl border border-[#ece9f6] shadow-card hover:border-brand-300 hover:shadow-glow cursor-pointer transition-all flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl">🎼</div>
-                <div>
-                  <h4 class="font-bold text-xs text-textMain">${dir}</h4>
-                  <p class="text-[11px] text-textMuted">${count} tracks</p>
-                </div>
-              </div>
-              <span class="text-brand-400 text-sm">→</span>
-            </div>
-          `;
-        }).join('');
-      }
-      // Level 2: Show Albums for selected director
-      else if (path.length === 3) {
-        const [root, lang, dir] = path;
-        const albums = [...new Set(state.songs.filter(s => s.language === lang && s.director === dir).map(s => s.album))];
-        container.innerHTML = albums.map(alb => {
-          const count = state.songs.filter(s => s.language === lang && s.director === dir && s.album === alb).length;
-          return `
-            <div onclick="drillFolder('${alb}')" class="bg-white p-4 rounded-2xl border border-[#ece9f6] shadow-card hover:border-brand-300 hover:shadow-glow cursor-pointer transition-all flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">💿</div>
-                <div>
-                  <h4 class="font-bold text-xs text-textMain">${alb}</h4>
-                  <p class="text-[11px] text-textMuted">${count} songs in album</p>
-                </div>
-              </div>
-              <span class="text-brand-400 text-sm">→</span>
-            </div>
-          `;
-        }).join('');
-      }
-      // Level 3: Show Songs inside Album
-      else if (path.length >= 4) {
-        const [root, lang, dir, alb] = path;
-        const songs = state.songs.filter(s => s.language === lang && s.director === dir && s.album === alb);
-        container.innerHTML = songs.map(song => {
-          const songIndex = state.songs.indexOf(song);
-          return `
-            <div onclick="playTrack(${songIndex})" class="bg-white p-4 rounded-2xl border border-[#ece9f6] shadow-card hover:border-brand-300 hover:shadow-glow cursor-pointer transition-all flex items-center justify-between col-span-full md:col-span-2">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl overflow-hidden bg-brand-100 shrink-0">
-                  <img src="${song.art}" class="w-full h-full object-cover">
-                </div>
-                <div>
-                  <h4 class="font-bold text-xs text-textMain">${song.title}</h4>
-                  <p class="text-[11px] text-textMuted">${song.artist} · ${fmtTime(song.duration)}</p>
-                </div>
-              </div>
-              <button class="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-600 flex items-center justify-center text-xs font-bold transition-all">▶</button>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
-    function drillFolder(folderName) {
-      if (folderName === 'root') {
-        state.folderPath = ['root'];
-      } else {
-        state.folderPath.push(folderName);
-      }
-      renderFolderView();
-    }
-
-    function drillFolderToIndex(index) {
-      state.folderPath = state.folderPath.slice(0, index + 1);
-      renderFolderView();
-    }
-
-    // COMPLETE LIBRARY LIST
-    function renderLibraryList() {
-      const list = document.getElementById("fullLibraryList");
-      if (!list) return;
-      list.innerHTML = state.songs.map((song, i) => `
-        <div onclick="playTrack(${i})" class="px-5 py-3 hover:bg-brand-50/70 cursor-pointer flex items-center justify-between transition-colors">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg overflow-hidden bg-brand-100">
-              <img src="${song.art}" class="w-full h-full object-cover">
-            </div>
-            <div>
-              <div class="text-xs font-bold text-textMain">${song.title}</div>
-              <div class="text-[11px] text-textMuted">${song.artist} · <span class="font-mono text-brand-500">${song.language}/${song.director}</span></div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="text-[11px] text-textMuted font-mono">${fmtTime(song.duration)}</span>
-            <button onclick="toggleFavoriteSongId('${song.id}', event)" class="text-xs">${song.favorite ? '❤️' : '🤍'}</button>
           </div>
         </div>
-      `).join('');
+      `;
     }
 
-    // FAVORITES
-    function renderFavorites() {
-      const list = document.getElementById("favoritesList");
-      if (!list) return;
-      const favs = state.songs.filter(s => s.favorite);
-      if (favs.length === 0) {
-        list.innerHTML = `<div class="p-8 text-center text-xs text-textMuted">No favorites added yet. Click the heart icon on any song!</div>`;
-        return;
-      }
-      list.innerHTML = favs.map(song => {
-        const i = state.songs.indexOf(song);
-        return `
-          <div onclick="playTrack(${i})" class="px-5 py-3 hover:bg-brand-50/70 cursor-pointer flex items-center justify-between transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg overflow-hidden bg-brand-100">
-                <img src="${song.art}" class="w-full h-full object-cover">
-              </div>
-              <div>
-                <div class="text-xs font-bold text-textMain">${song.title}</div>
-                <div class="text-[11px] text-textMuted">${song.artist}</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="text-[11px] text-textMuted font-mono">${fmtTime(song.duration)}</span>
-              <button onclick="toggleFavoriteSongId('${song.id}', event)" class="text-xs text-rose-500">❤️</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // RECENTLY PLAYED
-    function renderRecentlyPlayed() {
-      const list = document.getElementById("recentlyPlayedList");
-      if (!list) return;
-      const sorted = [...state.songs].sort((a,b) => (b.played || 0) - (a.played || 0));
-      list.innerHTML = sorted.map(song => {
-        const i = state.songs.indexOf(song);
-        return `
-          <div onclick="playTrack(${i})" class="px-5 py-3 hover:bg-brand-50/70 cursor-pointer flex items-center justify-between transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg overflow-hidden bg-brand-100">
-                <img src="${song.art}" class="w-full h-full object-cover">
-              </div>
-              <div>
-                <div class="text-xs font-bold text-textMain">${song.title}</div>
-                <div class="text-[11px] text-textMuted">${song.artist} · Last played: ${song.lastPlayed || 'Recently'}</div>
-              </div>
-            </div>
-            <div class="text-[11px] font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg">${song.played} plays</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // GENERIC EXPLORER VIEW (Artists, Albums, Collections)
-    function renderGenericView(type) {
-      const title = document.getElementById("genericTitle");
-      const grid = document.getElementById("genericGrid");
-      title.innerText = type.charAt(0).toUpperCase() + type.slice(1);
-
-      if (type === 'artists') {
-        const directors = [...new Set(state.songs.map(s => s.director))];
-        grid.innerHTML = directors.map(d => `
-          <div onclick="filterByDirector('${d}')" class="bg-white p-4 rounded-3xl border border-[#ece9f6] shadow-card hover:shadow-glow cursor-pointer transition-all text-center">
-            <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-600 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">🎤</div>
-            <h4 class="font-bold text-xs text-textMain truncate">${d}</h4>
-            <p class="text-[11px] text-textMuted mt-0.5">${state.songs.filter(s => s.director === d).length} songs</p>
-          </div>
-        `).join('');
-      } else if (type === 'albums') {
-        const albums = [...new Set(state.songs.map(s => s.album))];
-        grid.innerHTML = albums.map(a => {
-          const s = state.songs.find(x => x.album === a);
-          return `
-            <div onclick="filterByAlbum('${a}')" class="bg-white p-4 rounded-3xl border border-[#ece9f6] shadow-card hover:shadow-glow cursor-pointer transition-all text-center">
-              <div class="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-sm">
-                <img src="${s ? s.art : ''}" class="w-full h-full object-cover">
-              </div>
-              <h4 class="font-bold text-xs text-textMain truncate">${a}</h4>
-              <p class="text-[11px] text-textMuted mt-0.5">${state.songs.filter(x => x.album === a).length} tracks</p>
-            </div>
-          `;
-        }).join('');
-      } else {
-        grid.innerHTML = `<div class="col-span-full text-center text-textMuted text-xs py-10">Smart dynamic playlist collection ready for streaming.</div>`;
-      }
-    }
-
-    function filterByDirector(director) {
-      state.folderPath = ['root', 'Tamil', director];
-      switchView('folderview');
-    }
-
-    function filterByAlbum(album) {
-      const s = state.songs.find(x => x.album === album);
-      if (s) {
-        state.folderPath = ['root', s.language, s.director, s.album];
-      }
-      switchView('folderview');
-    }
-
-    // SEARCH
-    function handleGlobalSearch(term) {
-      if (!term.trim()) {
-        renderAllViews();
-        return;
-      }
-      const q = term.toLowerCase();
-      const results = state.songs.filter(s => 
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q) ||
-        s.album.toLowerCase().includes(q) ||
-        s.director.toLowerCase().includes(q) ||
-        s.path.toLowerCase().includes(q)
-      );
-
-      // Temporarily show search results in Library View
-      switchView('library');
-      const list = document.getElementById("fullLibraryList");
-      if (list) {
-        list.innerHTML = results.length === 0 
-          ? `<div class="p-6 text-center text-xs text-textMuted">No songs matched "${term}"</div>`
-          : results.map((song, i) => `
-            <div onclick="playTrack(${state.songs.indexOf(song)})" class="px-5 py-3 hover:bg-brand-50/70 cursor-pointer flex items-center justify-between transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg overflow-hidden bg-brand-100">
-                  <img src="${song.art}" class="w-full h-full object-cover">
+    function renderSongList(container, songs, title) {
+      container.innerHTML = `
+        <div>
+          <h2 class="text-xl font-black text-slate-800 mb-6">${title} (${songs.length})</h2>
+          <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden shadow-sm">
+            <div class="divide-y divide-purple-50">
+              ${songs.map((s, idx) => `
+                <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 group cursor-pointer transition" onclick='playTrack(${JSON.stringify(s)})'>
+                  <div class="flex items-center gap-4 min-w-0">
+                    <span class="text-xs font-bold text-slate-300 group-hover:text-brand-600 w-5">${idx + 1}</span>
+                    <div class="min-w-0">
+                      <h4 class="text-sm font-bold text-slate-800 truncate">${s.title}</h4>
+                      <p class="text-xs text-slate-400 truncate">${s.director} •${s.album}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <button onclick="event.stopPropagation(); toggleFav('${s.path}'); this.querySelector('i').classList.toggle('text-rose-500');" class="text-slate-300 hover:text-rose-500">
+                      <i class="fa-solid fa-heart text-sm ${favorites.includes(s.path) ? 'text-rose-500' : ''}"></i>
+                    </button>
+                    <span class="text-xs font-medium text-slate-400">${s.language}</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="text-xs font-bold text-textMain">${song.title}</div>
-                  <div class="text-[11px] text-textMuted">${song.artist} · <span class="font-mono text-brand-500">${song.path}</span></div>
-                </div>
-              </div>
-              <button class="px-3 py-1 bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-600 rounded-lg text-xs font-bold transition-all">Play</button>
+              `).join('')}
             </div>
-          `).join('');
-      }
+          </div>
+        </div>
+      `;
     }
 
-    // KEYBOARD SHORTCUTS
-    window.addEventListener("keydown", (e) => {
-      // Ctrl+F or Cmd+F for search focus
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        const search = document.getElementById("searchInput");
-        if (search) search.focus();
-      }
-      // Spacebar for play/pause if not typing in input
-      if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-        e.preventDefault();
-        togglePlayPause();
-      }
-    });
+    function renderMostPlayed(container) {
+      const sorted = [...library].sort((a,b) => (playCounts[b.path] || 0) - (playCounts[a.path] || 0)).filter(s => (playCounts[s.path] || 0) > 0);
 
-    /* =========================================================================
-       USER AUTHENTICATION & MODAL CONTROLLERS
-       ========================================================================= */
-    function openAuthModal() {
-      document.getElementById("authModal").classList.remove("hidden");
-    }
-    function closeAuthModal() {
-      document.getElementById("authModal").classList.add("hidden");
-    }
-
-    function updateUserHeader() {
-      document.getElementById("userTopName").innerText = state.currentUser;
-      document.getElementById("userAvatar").innerText = state.currentUser.charAt(0).toUpperCase();
-      const greeting = document.getElementById("greetingTitle");
-      if (greeting) greeting.innerText = `Good Afternoon, ${state.currentUser}`;
+      container.innerHTML = `
+        <div>
+          <h2 class="text-xl font-black text-slate-800 mb-6"><i class="fa-solid fa-fire text-amber-500 mr-2"></i>Most Played Tracks</h2>
+          <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden shadow-sm">
+            ${sorted.length ? sorted.map((s, idx) => `
+              <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
+                <div class="flex items-center gap-4">
+                  <span class="text-sm font-bold text-brand-600 w-6">#${idx+1}</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
+                    <p class="text-xs text-slate-400">${s.director} •${s.album}</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold">${playCounts[s.path]} plays</span>
+              </div>
+            `).join('') : '<div class="p-8 text-center text-xs text-slate-400">No tracks played yet. Start streaming to populate your most played list!</div>'}
+          </div>
+        </div>
+      `;
     }
 
-    function loginUser() {
-      const u = document.getElementById("authUsernameInput").value.trim();
-      if (!u) return;
-      state.currentUser = u;
-      initStorage();
-      closeAuthModal();
-      showNotification(`Welcome back, ${u}! Session loaded.`);
-    }
-
-    function registerUser() {
-      const u = document.getElementById("authUsernameInput").value.trim();
-      if (!u) return;
-      state.currentUser = u;
-      state.songs = [...DEFAULT_SONGS]; // Fresh user state
-      persistState();
-      updateUserHeader();
-      closeAuthModal();
-      showNotification(`Account created for ${u} on Ubuntu server.`);
-    }
-
-    /* =========================================================================
-       UBUNTU SERVER CREDENTIALS & SCAN MODAL
-       ========================================================================= */
-    function openServerModal() {
-      document.getElementById("serverModal").classList.remove("hidden");
-    }
-    function closeServerModal() {
-      document.getElementById("serverModal").classList.add("hidden");
-    }
-
-    function testServerConnection() {
-      const btn = document.getElementById("testConnBtn");
-      btn.innerHTML = `<span class="inline-block animate-spin mr-2">🔄</span> Connecting to 192.168.29.229...`;
-      setTimeout(() => {
-        btn.innerHTML = `✓ Connection Verified & Scanned!`;
-        btn.classList.remove("bg-brand-600");
-        btn.classList.add("bg-emerald-600");
-        setTimeout(() => {
-          closeServerModal();
-          btn.innerHTML = `Test Connection & Scan Files`;
-          btn.classList.add("bg-brand-600");
-          btn.classList.remove("bg-emerald-600");
-          showNotification("Connected to dunjuai server (192.168.29.229:5000) successfully.");
-        }, 1200);
-      }, 1000);
-    }
-
-    function saveServerSettings() {
-      state.server.host = document.getElementById("settingsServerHost").value;
-      state.server.port = document.getElementById("settingsServerPort").value;
-      state.server.path = document.getElementById("settingsMusicPath").value;
-      showNotification("Server settings saved. Streaming endpoint configured.");
-    }
-
-    function rescanLibraryUI() {
-      const btn = document.getElementById("rescanBtn");
-      btn.innerHTML = `Scanning...`;
-      setTimeout(() => {
-        btn.innerHTML = `<span>🔄</span> Rescan Library Now`;
-        showNotification("Scan complete: 2,186 audio files indexed from /home/dunjuai/Songs.");
-      }, 900);
-    }
-
-    function rescanFolderMock() {
-      showNotification("Folder tree synchronized with Ubuntu server.");
-      renderFolderView();
-    }
-
-    function backupDatabase() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.songs));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `dunjuplayer_${state.currentUser}_backup.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function restoreDatabasePrompt() {
-      showNotification("Select your backup JSON file from the dialog.");
-    }
-
-    function resetStats() {
-      state.songs.forEach(s => {
-        s.played = 0;
-        s.favorite = false;
+    // Dynamic Tree Folder Navigation
+    function renderFolderView(container) {
+      // Find current level subfolders or files
+      let levelTracks = library;
+      currentFolderRoute.forEach((folder, idx) => {
+        if (idx === 0) levelTracks = levelTracks.filter(s => s.language === folder);
+        if (idx === 1) levelTracks = levelTracks.filter(s => s.director === folder);
+        if (idx === 2) levelTracks = levelTracks.filter(s => s.album === folder);
       });
-      persistState();
-      renderAllViews();
-      showNotification("All statistics and history reset.");
+
+      // Collect unique next steps
+      let folders = [];
+      let songs = [];
+
+      if (currentFolderRoute.length === 0) {
+        folders = [...new Set(library.map(s => s.language))].filter(Boolean);
+      } else if (currentFolderRoute.length === 1) {
+        folders = [...new Set(levelTracks.map(s => s.director))].filter(Boolean);
+      } else if (currentFolderRoute.length === 2) {
+        folders = [...new Set(levelTracks.map(s => s.album))].filter(Boolean);
+      } else {
+        songs = levelTracks;
+      }
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-black text-slate-800 flex items-center gap-2"><i class="fa-solid fa-folder text-amber-400"></i> Server Directory Browser</h2>
+              <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mt-2">
+                <span class="cursor-pointer hover:text-brand-600" onclick="drillFolder(-1)">/home/dunjuai/Songs</span>
+                ${currentFolderRoute.map((f, i) => `
+                  <span>/</span>
+                  <span class="cursor-pointer hover:text-brand-600 font-bold text-brand-600" onclick="drillFolder(${i})">${f}</span>
+                `).join('')}
+              </div>
+            </div>
+            <button onclick="fetchServerLibrary().then(() => renderFolderView(container))" class="px-3 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-slate-600 hover:bg-brand-50">Refresh</button>
+          </div>
+
+          <!-- Folders Grid -->
+          ${folders.length ? `
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              ${folders.map(folderName => `
+                <div onclick="enterFolder('${folderName.replace(/'/g, "\\'")}')" class="p-4 rounded-2xl bg-white border border-purple-100 hover:border-brand-400 hover:shadow-lg cursor-pointer transition flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-folder"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="text-sm font-bold text-slate-800 truncate">${folderName}</h4>
+                    <p class="text-[11px] text-slate-400">Browse Folder &rarr;</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Songs at leaf folder -->
+          ${songs.length ? `
+            <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden divide-y divide-purple-50">
+              ${songs.map((s, idx) => `
+                <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
+                  <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold text-slate-300">${idx+1}</span>
+                    <h4 class="text-sm font-bold text-slate-800">${s.title}</h4>
+                  </div>
+                  <i class="fa-solid fa-play text-xs text-brand-600"></i>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
     }
 
-    // In-app floating toast notification
-    function showNotification(msg) {
-      const existing = document.getElementById("toastNotification");
-      if (existing) existing.remove();
-
-      const toast = document.createElement("div");
-      toast.id = "toastNotification";
-      toast.className = "fixed bottom-24 right-8 bg-[#24213d] text-white px-5 py-3 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-2.5 z-50 animate-bounce";
-      toast.innerHTML = `<span>✨</span><span>${msg}</span>`;
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.remove();
-      }, 3500);
+    function enterFolder(name) {
+      currentFolderRoute.push(name);
+      renderFolderView(document.getElementById('contentContainer'));
     }
 
-    // INITIALIZATION
-    window.addEventListener("DOMContentLoaded", () => {
-      initStorage();
-      renderAllViews();
-      updatePlaybackUI();
-      updateVolumeUI();
-    });
+    function drillFolder(idx) {
+      if (idx === -1) {
+        currentFolderRoute = [];
+      } else {
+        currentFolderRoute = currentFolderRoute.slice(0, idx + 1);
+      }
+      renderFolderView(document.getElementById('contentContainer'));
+    }
+
+    // Settings
+    function renderSettings(container) {
+      container.innerHTML = `
+        <div class="max-w-2xl space-y-6">
+          <h2 class="text-xl font-black text-slate-800">Connection Settings</h2>
+          <div class="p-6 rounded-2xl bg-white border border-purple-100 space-y-4 shadow-sm">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cloudflare Stream URL</label>
+              <input id="setServerUrl" type="text" value="${config.serverUrl}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username Profile</label>
+              <input id="setUsername" type="text" value="${config.username}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+            </div>
+            <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition">Save Changes</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveSettings() {
+      const url = document.getElementById('setServerUrl').value.trim();
+      const user = document.getElementById('setUsername').value.trim();
+      config.serverUrl = url;
+      config.username = user;
+      localStorage.setItem('dunju_server', url);
+      localStorage.setItem('dunju_user', user);
+      document.getElementById('userNameLabel').innerText = user;
+      document.getElementById('userAvatar').innerText = user[0].toUpperCase();
+      fetchServerLibrary();
+      alert('Settings saved!');
+    }
   </script>
 </body>
 </html>

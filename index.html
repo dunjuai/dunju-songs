@@ -32,8 +32,8 @@
 </head>
 <body class="bg-[#f4f3fb] text-slate-800 flex h-screen overflow-hidden select-none">
 
-  <!-- Auth Modal -->
-  <div id="authModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 hidden">
+  <!-- Mandatory Auth Modal (Visible by default until verified) -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-purple-100 relative">
       <div class="flex items-center gap-3 mb-6">
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
@@ -42,18 +42,18 @@
         <span class="font-extrabold text-xl tracking-tight text-slate-800">Dunju<span class="text-brand-600">Player</span></span>
       </div>
 
-      <h2 id="authTitle" class="text-2xl font-black text-slate-800">Welcome to Dunju AI</h2>
-      <p id="authSubtitle" class="text-xs text-slate-400 font-semibold mt-1 mb-6">Create an account to save your favorites & stats</p>
+      <h2 id="authTitle" class="text-2xl font-black text-slate-800">Sign In to Continue</h2>
+      <p id="authSubtitle" class="text-xs text-slate-400 font-semibold mt-1 mb-6">Enter your account credentials to access your music</p>
 
       <div class="flex gap-2 p-1 bg-purple-50 rounded-xl mb-6">
-        <button id="tabRegister" onclick="switchAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition">Sign Up</button>
-        <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition">Sign In</button>
+        <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition">Sign In</button>
+        <button id="tabRegister" onclick="switchAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition">Sign Up</button>
       </div>
 
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username</label>
-          <input id="authUsername" type="text" required placeholder="e.g. swami" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 bg-purple-50/30 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+          <input id="authUsername" type="text" required placeholder="Enter username" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 bg-purple-50/30 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40">
         </div>
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
@@ -63,7 +63,7 @@
         <div id="authError" class="hidden text-xs font-semibold text-rose-500 bg-rose-50 p-2.5 rounded-xl"></div>
 
         <button type="submit" id="authSubmitBtn" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/25 transition">
-          Create Account & Start Listening
+          Sign In
         </button>
       </form>
     </div>
@@ -139,9 +139,9 @@
   <footer class="fixed bottom-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-6 flex items-center justify-between z-30 shadow-lg">
     <!-- Song Info & Album Art -->
     <div class="flex items-center gap-3.5 w-1/4 min-w-[240px]">
-      <div id="barArtWrapper" class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0 overflow-hidden">
+      <div id="barArtWrapper" class="w-14 h-14 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-xl shadow flex-shrink-0 overflow-hidden relative">
         <i id="barFallbackIcon" class="fa-solid fa-music"></i>
-        <img id="barCoverImg" class="w-full h-full object-cover hidden" alt="Cover" />
+        <img id="barCoverImg" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover" />
       </div>
       <div class="min-w-0">
         <h4 id="barTitle" class="text-sm font-bold text-slate-800 truncate">No song playing</h4>
@@ -178,7 +178,6 @@
   <audio id="audioElement" preload="metadata"></audio>
 
   <script>
-    // App State
     let config = {
       serverUrl: localStorage.getItem('dunju_server') || 'https://stream.dunjuai.com',
       username: localStorage.getItem('dunju_user') || ''
@@ -199,6 +198,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       setupAudioEvents();
 
+      // Check user session
       if (!config.username) {
         document.getElementById('authModal').classList.remove('hidden');
         switchAuthMode('login');
@@ -223,15 +223,15 @@
       err.classList.add('hidden');
 
       if (mode === 'register') {
-        title.innerText = 'Welcome to Dunju AI';
-        sub.innerText = 'Create an account to save your favorites & stats';
-        submitBtn.innerText = 'Create Account & Start Listening';
+        title.innerText = 'Create an Account';
+        sub.innerText = 'Register on your server to sync favorites and history';
+        submitBtn.innerText = 'Create Account';
         tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
         tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
       } else {
-        title.innerText = 'Welcome Back';
-        sub.innerText = 'Enter your credentials to access your library & history';
-        submitBtn.innerText = 'Sign In to DunjuPlayer';
+        title.innerText = 'Sign In to Continue';
+        sub.innerText = 'Enter your account credentials to access your music';
+        submitBtn.innerText = 'Sign In';
         tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
         tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
       }
@@ -591,6 +591,7 @@
       `;
     }
 
+    // Dynamic Tree Folder Navigation with Alphabetical Sorting
     function renderFolderView(container) {
       let levelTracks = library;
       currentFolderRoute.forEach((folder, idx) => {
@@ -602,14 +603,18 @@
       let folders = [];
       let songs = [];
 
+      // Extract and sort alphabetically (A-Z)
       if (currentFolderRoute.length === 0) {
-        folders = [...new Set(library.map(s => s.language))].filter(Boolean);
+        folders = [...new Set(library.map(s => s.language))].filter(Boolean)
+                    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       } else if (currentFolderRoute.length === 1) {
-        folders = [...new Set(levelTracks.map(s => s.director))].filter(Boolean);
+        folders = [...new Set(levelTracks.map(s => s.director))].filter(Boolean)
+                    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       } else if (currentFolderRoute.length === 2) {
-        folders = [...new Set(levelTracks.map(s => s.album))].filter(Boolean);
+        folders = [...new Set(levelTracks.map(s => s.album))].filter(Boolean)
+                    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
       } else {
-        songs = levelTracks;
+        songs = [...levelTracks].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
       }
 
       container.innerHTML = `
@@ -632,12 +637,12 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               ${folders.map(folderName => `
                 <div onclick="enterFolder('${folderName.replace(/'/g, "\\'")}')" class="p-4 rounded-2xl bg-white border border-purple-100 hover:border-brand-400 hover:shadow-lg cursor-pointer transition flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                  <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg flex-shrink-0">
                     <i class="fa-solid fa-folder"></i>
                   </div>
                   <div class="min-w-0">
                     <h4 class="text-sm font-bold text-slate-800 truncate">${folderName}</h4>
-                    <p class="text-[11px] text-slate-400">Browse Folder &rarr;</p>
+                    <p class="text-[11px] text-slate-400">Browse &rarr;</p>
                   </div>
                 </div>
               `).join('')}
@@ -649,7 +654,7 @@
               ${songs.map((s, idx) => `
                 <div class="p-3.5 px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
                   <div class="flex items-center gap-4">
-                    <span class="text-xs font-bold text-slate-300">${idx+1}</span>
+                    <span class="text-xs font-bold text-slate-300 w-5">${idx+1}</span>
                     <div class="w-8 h-8 rounded-lg bg-brand-100 overflow-hidden relative flex-shrink-0 flex items-center justify-center text-brand-600">
                       <i class="fa-solid fa-music text-[10px]"></i>
                       <img src="${getCoverUrl(s.path)}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />

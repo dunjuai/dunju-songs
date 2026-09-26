@@ -94,8 +94,9 @@
         <button onclick="navigate('library'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="library">
           <i class="fa-solid fa-music w-5 text-center text-slate-400"></i> Library
         </button>
+        <!-- Now Playing Sidebar Button -->
         <button onclick="navigate('nowplaying'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="nowplaying">
-          <i class="fa-solid fa-play w-5 text-center text-brand-600"></i> Now Playing
+          <i class="fa-solid fa-circle-play w-5 text-center text-brand-600"></i> Now Playing
         </button>
         <button onclick="navigate('favorites'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="favorites">
           <i class="fa-solid fa-heart w-5 text-center text-rose-500"></i> Favorites
@@ -149,12 +150,13 @@
     <div id="contentContainer" class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-8 pb-40"></div>
   </main>
 
-  <!-- Bottom Player Bar -->
+  <!-- Bottom Player Bar (Matching Windows App Layout) -->
   <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-purple-100 px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between z-30 shadow-lg gap-2 sm:gap-4">
-    <!-- Track Info + Cover Art (Clickable to open Now Playing view) -->
-    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 flex-1 min-w-0">
-      <div onclick="navigate('nowplaying')" class="flex items-center gap-3 min-w-0 flex-1 sm:max-w-xs cursor-pointer group">
-        <div id="barArtWrapper" class="w-11 h-11 sm:w-13 sm:h-13 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg shadow flex-shrink-0 overflow-hidden relative">
+    
+    <!-- Left: Track Info & Album Art -->
+    <div class="w-full sm:w-1/4 sm:min-w-[240px] flex items-center justify-between sm:justify-start gap-3">
+      <div onclick="navigate('nowplaying')" class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group">
+        <div id="barArtWrapper" class="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg shadow flex-shrink-0 overflow-hidden relative">
           <i id="barFallbackIcon" class="fa-solid fa-music"></i>
           <img id="barCoverImg" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover" />
         </div>
@@ -167,41 +169,36 @@
       <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition px-1">
         <i class="fa-solid fa-heart text-base sm:text-lg"></i>
       </button>
-
-      <!-- Mobile Quick Controls -->
-      <div class="flex items-center gap-2 sm:hidden">
-        <button onclick="toggleShuffle()" id="mobShuffleBtn" class="text-slate-300 p-1"><i class="fa-solid fa-shuffle text-sm"></i></button>
-        <button onclick="playPrev()" class="text-slate-400 p-1"><i class="fa-solid fa-backward-step text-base"></i></button>
-        <button onclick="togglePlay()" id="playPauseBtnMobile" class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center text-sm shadow">
-          <i class="fa-solid fa-play ml-0.5"></i>
-        </button>
-        <button onclick="playNext()" class="text-slate-400 p-1"><i class="fa-solid fa-forward-step text-base"></i></button>
-      </div>
     </div>
 
-    <!-- Center Playback Controls + Scrub Bar -->
-    <div class="w-full sm:flex-1 sm:max-w-xl flex flex-col items-center gap-1">
-      <div class="hidden sm:flex items-center gap-5">
-        <!-- Shuffle Button -->
-        <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle" class="text-slate-300 hover:text-slate-600 transition p-1">
+    <!-- Center: Playback Controls + Scrub Bar -->
+    <div class="w-full sm:flex-1 sm:max-w-2xl flex flex-col items-center gap-1.5">
+      <!-- 5-Button Control Group (ALWAYS VISIBLE ON ALL SCREENS) -->
+      <div class="flex items-center justify-center gap-4 sm:gap-6">
+        <!-- 1. Shuffle Button -->
+        <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle Mode" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
           <i class="fa-solid fa-shuffle text-sm"></i>
         </button>
-        <!-- Prev Button -->
-        <button onclick="playPrev()" title="Previous (Left Arrow)" class="text-slate-400 hover:text-slate-700 transition">
+
+        <!-- 2. Previous Button -->
+        <button onclick="playPrev()" title="Previous (Left Arrow)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-brand-600 hover:bg-brand-50 transition">
           <i class="fa-solid fa-backward-step text-base"></i>
         </button>
-        <!-- Play / Pause Button -->
-        <button onclick="togglePlay()" id="playPauseBtn" title="Play / Pause (Space)" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 transition">
+
+        <!-- 3. Primary Play / Pause Button -->
+        <button onclick="togglePlay()" id="playPauseBtn" title="Play / Pause (Spacebar)" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-base shadow-md shadow-brand-500/30 transition hover:scale-105 active:scale-95">
           <i class="fa-solid fa-play ml-0.5"></i>
         </button>
-        <!-- Next Button -->
-        <button onclick="playNext()" title="Next (Right Arrow)" class="text-slate-400 hover:text-slate-700 transition">
+
+        <!-- 4. Next Button -->
+        <button onclick="playNext()" title="Next (Right Arrow)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-brand-600 hover:bg-brand-50 transition">
           <i class="fa-solid fa-forward-step text-base"></i>
         </button>
-        <!-- Repeat Button -->
-        <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat (Off / All / One)" class="text-slate-300 hover:text-slate-600 transition p-1 relative">
+
+        <!-- 5. Repeat Button -->
+        <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat Mode (Off / All / One)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition relative">
           <i class="fa-solid fa-repeat text-sm"></i>
-          <span id="repeatBadge" class="hidden absolute -top-1 -right-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 text-white text-[9px] font-black flex items-center justify-center leading-none">1</span>
+          <span id="repeatBadge" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-brand-600 text-white text-[9px] font-black flex items-center justify-center leading-none ring-2 ring-white">1</span>
         </button>
       </div>
 
@@ -213,16 +210,16 @@
       </div>
     </div>
 
-    <!-- Volume Up / Down & Mute Controls -->
-    <div class="hidden sm:flex items-center justify-end gap-2 w-1/4 max-w-[200px]">
-      <button onclick="adjustVolume(-0.1)" title="Volume Down" class="text-slate-400 hover:text-slate-700 text-xs p-1">
+    <!-- Right: Volume & Speed Controls -->
+    <div class="hidden sm:flex items-center justify-end gap-2.5 w-1/4 sm:min-w-[200px]">
+      <button onclick="adjustVolume(-0.1)" title="Volume Down" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-purple-50 transition text-xs">
         <i class="fa-solid fa-minus"></i>
       </button>
-      <button onclick="toggleMute()" id="volIconBtn" title="Mute/Unmute" class="text-slate-400 hover:text-brand-600 text-sm p-1">
+      <button onclick="toggleMute()" id="volIconBtn" title="Mute/Unmute" class="text-slate-500 hover:text-brand-600 transition text-sm p-1">
         <i id="volIcon" class="fa-solid fa-volume-high"></i>
       </button>
       <input id="volSlider" type="range" min="0" max="100" value="80" class="w-20 h-1.5 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-brand-600">
-      <button onclick="adjustVolume(0.1)" title="Volume Up" class="text-slate-400 hover:text-slate-700 text-xs p-1">
+      <button onclick="adjustVolume(0.1)" title="Volume Up" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-purple-50 transition text-xs">
         <i class="fa-solid fa-plus"></i>
       </button>
     </div>
@@ -285,24 +282,21 @@
       return `${config.serverUrl}/api/cover?path=${encodeURIComponent(trackPath)}`;
     }
 
-    // Shuffle & Repeat Functions
+    // Shuffle & Repeat Engine
     function toggleShuffle() {
       isShuffle = !isShuffle;
       const shufBtn = document.getElementById('shuffleBtn');
-      const mobShuf = document.getElementById('mobShuffleBtn');
       if (isShuffle) {
-        shufBtn.className = 'text-brand-600 font-bold transition p-1';
-        if (mobShuf) mobShuf.className = 'text-brand-600 font-bold p-1';
+        shufBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-white bg-brand-600 shadow-sm transition';
         initShuffleIndices();
       } else {
-        shufBtn.className = 'text-slate-300 hover:text-slate-600 transition p-1';
-        if (mobShuf) mobShuf.className = 'text-slate-300 p-1';
+        shufBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition';
       }
+      if (currentPage === 'nowplaying') renderNowPlaying(document.getElementById('contentContainer'));
     }
 
     function initShuffleIndices() {
       unplayedShuffleIndices = currentPlaylist.map((_, i) => i).filter(i => i !== currentTrackIndex);
-      // Fisher-Yates shuffle
       for (let i = unplayedShuffleIndices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [unplayedShuffleIndices[i], unplayedShuffleIndices[j]] = [unplayedShuffleIndices[j], unplayedShuffleIndices[i]];
@@ -315,13 +309,13 @@
       const badge = document.getElementById('repeatBadge');
 
       if (repeatMode === 0) {
-        repBtn.className = 'text-slate-300 hover:text-slate-600 transition p-1 relative';
+        repBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition relative';
         badge.classList.add('hidden');
       } else if (repeatMode === 1) { // Repeat All
-        repBtn.className = 'text-brand-600 font-bold transition p-1 relative';
+        repBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-brand-600 bg-brand-100 transition relative';
         badge.classList.add('hidden');
       } else if (repeatMode === 2) { // Repeat One
-        repBtn.className = 'text-brand-600 font-bold transition p-1 relative';
+        repBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-white bg-brand-600 transition relative';
         badge.classList.remove('hidden');
       }
     }
@@ -492,15 +486,12 @@
         audio.pause();
       }
       document.getElementById('playPauseBtn').innerHTML = icon;
-      const mobBtn = document.getElementById('playPauseBtnMobile');
-      if (mobBtn) mobBtn.innerHTML = icon;
     }
 
     function playNext() {
       if (!currentPlaylist.length) return;
 
       if (repeatMode === 2) {
-        // Repeat One
         audio.currentTime = 0;
         audio.play();
         return;
@@ -508,7 +499,7 @@
 
       if (isShuffle) {
         if (unplayedShuffleIndices.length === 0) {
-          if (repeatMode === 1) { // Repeat All
+          if (repeatMode === 1) {
             initShuffleIndices();
           } else {
             return;
@@ -519,7 +510,6 @@
         return;
       }
 
-      // Sequential
       if (currentTrackIndex + 1 >= currentPlaylist.length) {
         if (repeatMode === 1) {
           currentTrackIndex = 0;
@@ -550,10 +540,7 @@
     function updateBarInfo(track) {
       document.getElementById('barTitle').innerText = track.title;
       document.getElementById('barArtist').innerText = `${track.director} • ${track.album}`;
-      const pauseIcon = '<i class="fa-solid fa-pause"></i>';
-      document.getElementById('playPauseBtn').innerHTML = pauseIcon;
-      const mobBtn = document.getElementById('playPauseBtnMobile');
-      if (mobBtn) mobBtn.innerHTML = pauseIcon;
+      document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
 
       const isFav = favorites.includes(track.path);
       document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
@@ -650,17 +637,18 @@
         audio.currentTime = (seek.value / 100) * audio.duration;
       };
 
-      vol.oninput = () => {
-        audio.volume = vol.value / 100;
-        updateVolumeIcon(audio.volume);
-      };
+      if (vol) {
+        vol.oninput = () => {
+          audio.volume = vol.value / 100;
+          updateVolumeIcon(audio.volume);
+        };
+      }
 
       audio.onended = () => playNext();
     }
 
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
-        // Ignore if user is typing in search or inputs
         if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
         if (e.code === 'Space') {
@@ -735,7 +723,7 @@
       if (page === 'settings') renderSettings(container);
     }
 
-    // Now Playing View matching user layout
+    // Now Playing View matching Windows App Layout
     function renderNowPlaying(container) {
       if (currentTrackIndex === -1 && library.length > 0) {
         currentTrackIndex = 0;
@@ -788,7 +776,7 @@
                 </div>
               </div>
 
-              <!-- Quick Action Pills -->
+              <!-- Action Pills -->
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                 <button onclick="toggleFavCurrent()" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold transition flex items-center gap-2 ${isFav ? 'text-rose-500 bg-rose-50/50' : 'text-slate-600'}">
                   <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i> ${isFav ? 'Favorited' : 'Add to Favorites'}
@@ -801,7 +789,7 @@
                 </button>
               </div>
 
-              <!-- Audio Info Stats Grid -->
+              <!-- Stats Grid -->
               <div class="pt-4 border-t border-purple-50 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center md:text-left">
                 <div>
                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Format</span>
@@ -817,7 +805,7 @@
                 </div>
                 <div>
                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Quality</span>
-                  <span class="text-xs font-extrabold text-brand-600">Lossless / HQ</span>
+                  <span class="text-xs font-extrabold text-brand-600">HQ Stream</span>
                 </div>
               </div>
             </div>

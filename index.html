@@ -69,6 +69,30 @@
     </div>
   </div>
 
+  <!-- Add to Playlist Picker Modal -->
+  <div id="playlistPickerModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-purple-100">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-list-ul text-brand-600"></i> Add to Playlist
+        </h3>
+        <button onclick="closePlaylistPicker()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <p id="pickerTrackTitle" class="text-xs text-slate-400 font-bold truncate mb-4"></p>
+      
+      <div id="pickerPlaylistList" class="space-y-2 max-h-60 overflow-y-auto custom-scroll mb-4">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="pt-3 border-t border-purple-50 flex items-center gap-2">
+        <input id="pickerNewPlName" type="text" placeholder="Or create new playlist..." class="flex-1 px-3 py-2 rounded-xl border border-purple-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+        <button onclick="pickerCreateAndAdd()" class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition">Create & Add</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Mobile Backdrop Overlay -->
   <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden md:hidden"></div>
 
@@ -114,6 +138,10 @@
         <button onclick="navigate('mostplayed'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="mostplayed">
           <i class="fa-solid fa-fire w-5 text-center text-amber-500"></i> Most Played
         </button>
+        <!-- Full Custom Playlists Option -->
+        <button onclick="navigate('playlists'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="playlists">
+          <i class="fa-solid fa-list-ul w-5 text-center text-indigo-500"></i> Playlists
+        </button>
         <button onclick="navigate('folders'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="folders">
           <i class="fa-solid fa-folder w-5 text-center text-amber-400"></i> Folder View
         </button>
@@ -123,7 +151,7 @@
       </nav>
     </div>
 
-    <!-- Status Badge (Live vs Not Reachable) -->
+    <!-- Live Status Badge (Live vs Not Reachable) -->
     <div class="p-6 border-t border-purple-50 flex items-center justify-between text-xs text-slate-400">
       <span id="libCount">0 songs</span>
       <div id="serverStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 font-bold transition">
@@ -147,19 +175,16 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Smart Community Play Something Button -->
         <button onclick="playSmartSomething()" title="Play community favorites & most played first" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-brand-500/25 transition active:scale-95">
           <i class="fa-solid fa-dice"></i> <span class="hidden sm:inline">Play Something</span>
         </button>
 
-        <!-- Desktop & Mobile Top Bar User Profile -->
         <div class="flex items-center gap-2 pl-2 sm:pl-3 border-l border-purple-100">
           <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs" id="userAvatar">?</div>
           <div class="hidden sm:flex flex-col">
             <span class="text-xs font-bold text-slate-700" id="userNameLabel">Guest</span>
             <button onclick="logout()" class="text-[10px] text-slate-400 hover:text-rose-500 text-left font-semibold">Log out</button>
           </div>
-          <!-- Mobile Direct Log Out Icon -->
           <button onclick="logout()" class="sm:hidden text-slate-400 hover:text-rose-500 p-1" title="Log out">
             <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
           </button>
@@ -186,9 +211,14 @@
         </div>
       </div>
 
-      <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition px-1">
-        <i class="fa-solid fa-heart text-base sm:text-lg"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button onclick="openPlaylistPickerForCurrent()" title="Add to Playlist" class="text-slate-300 hover:text-brand-600 transition p-1">
+          <i class="fa-solid fa-list-plus text-base sm:text-lg"></i>
+        </button>
+        <button onclick="toggleFavCurrent()" id="barFavBtn" class="text-slate-300 hover:text-rose-500 transition p-1">
+          <i class="fa-solid fa-heart text-base sm:text-lg"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Center: Playback Controls + Scrub Bar -->
@@ -251,6 +281,7 @@
     let favorites = [];
     let history = [];
     let playCounts = {};
+    let playlists = []; // Array of { id, name, songs: [paths...] }
 
     let isShuffle = false;
     let repeatMode = 0;
@@ -261,6 +292,11 @@
     let currentFolderRoute = [];
     let currentPage = 'home';
     let previousVolume = 0.8;
+
+    // Track play completion tracking variables
+    let currentSongCompleted = false;
+    let activeTrackPath = null;
+    let pickerTargetTrack = null;
 
     const audio = document.getElementById('audioElement');
 
@@ -276,7 +312,6 @@
         initUserSession(config.username);
       }
 
-      // Check server health periodically every 15 seconds
       checkServerHealth();
       setInterval(checkServerHealth, 15000);
     });
@@ -299,7 +334,6 @@
       return `${config.serverUrl}/api/cover?path=${encodeURIComponent(trackPath)}`;
     }
 
-    // Server Status Indicator (Live vs Not Reachable)
     async function checkServerHealth() {
       const badge = document.getElementById('serverStatusBadge');
       const dot = document.getElementById('serverDot');
@@ -321,7 +355,6 @@
       }
     }
 
-    // Community-Driven Smart "Play Something"
     async function playSmartSomething() {
       if (!library.length) return;
 
@@ -330,36 +363,29 @@
         const data = await res.json();
         const priorityPaths = data.priority_paths || [];
 
-        // Match paths to actual tracks in current library
         const priorityTracks = priorityPaths.map(p => library.find(s => s.path === p)).filter(Boolean);
         const remainingTracks = library.filter(s => !priorityPaths.includes(s.path));
 
-        // Shuffle priority tracks first
         for (let i = priorityTracks.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [priorityTracks[i], priorityTracks[j]] = [priorityTracks[j], priorityTracks[i]];
         }
 
-        // Shuffle remaining tracks
         for (let i = remainingTracks.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [remainingTracks[i], remainingTracks[j]] = [remainingTracks[j], remainingTracks[i]];
         }
 
-        // Priority first, then random remaining songs
         const smartQueue = [...priorityTracks, ...remainingTracks];
-
         if (smartQueue.length > 0) {
           playTrack(smartQueue[0], smartQueue);
         }
       } catch (e) {
-        // Fallback to pure random if server is unreachable
         const rand = Math.floor(Math.random() * library.length);
         playTrack(library[rand], library);
       }
     }
 
-    // Shuffle & Repeat Engine
     function toggleShuffle() {
       isShuffle = !isShuffle;
       const shufBtn = document.getElementById('shuffleBtn');
@@ -438,7 +464,7 @@
 
       if (mode === 'register') {
         title.innerText = 'Create an Account';
-        sub.innerText = 'Register on your server to sync favorites and history';
+        sub.innerText = 'Register on your server to sync favorites, history & playlists';
         submitBtn.innerText = 'Create Account';
         tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-white text-brand-600 shadow-sm transition';
         tabLog.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-brand-600 transition';
@@ -479,6 +505,7 @@
           favorites = data.favorites || [];
           history = data.history || [];
           playCounts = data.play_counts || {};
+          playlists = data.playlists || [];
         }
 
         document.getElementById('authModal').classList.add('hidden');
@@ -512,6 +539,7 @@
       favorites = [];
       history = [];
       playCounts = {};
+      playlists = [];
       audio.pause();
       document.getElementById('authModal').classList.remove('hidden');
       switchAuthMode('login');
@@ -531,6 +559,7 @@
       }
     }
 
+    // Playback Engine with Accurate Play Tracking
     function playTrack(track, playlist = null) {
       if (playlist) {
         currentPlaylist = playlist;
@@ -538,17 +567,57 @@
       }
       currentTrackIndex = currentPlaylist.findIndex(t => t.path === track.path);
 
+      // Reset completed flag for the new song
+      currentSongCompleted = false;
+      activeTrackPath = track.path;
+
+      // Add to recent history queue upon start
+      history = history.filter(p => p !== track.path);
+      history.unshift(track.path);
+      if (history.length > 50) history.pop();
+      syncUserData();
+
       const streamUrl = `${config.serverUrl}/${track.path.split('/').map(encodeURIComponent).join('/')}`;
       audio.src = streamUrl;
       audio.play().then(() => {
         updateBarInfo(track);
-        recordPlay(track);
         if (currentPage === 'nowplaying') {
           renderNowPlaying(document.getElementById('contentContainer'));
         }
       }).catch(err => {
         console.error("Playback error:", streamUrl, err);
       });
+    }
+
+    // Verified Play Count Increment (Triggered only when song completes or passes 85%)
+    function triggerVerifiedPlayCount(path) {
+      if (currentSongCompleted || activeTrackPath !== path) return;
+      currentSongCompleted = true;
+
+      playCounts[path] = (playCounts[path] || 0) + 1;
+      syncUserData();
+
+      if (currentPage === 'mostplayed') {
+        renderMostPlayed(document.getElementById('contentContainer'));
+      }
+      if (currentPage === 'nowplaying') {
+        renderNowPlaying(document.getElementById('contentContainer'));
+      }
+    }
+
+    function syncUserData() {
+      if (!config.username) return;
+      fetch(`${config.serverUrl}/api/sync`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: config.username,
+          favorites: favorites,
+          history: history,
+          play_counts: playCounts,
+          playlists: playlists
+        })
+      }).catch(() => {});
     }
 
     function togglePlay() {
@@ -614,7 +683,7 @@
       document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
 
       const isFav = favorites.includes(track.path);
-      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
+      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition p-1' : 'text-slate-300 hover:text-rose-500 transition p-1';
 
       const barCoverImg = document.getElementById('barCoverImg');
       const barFallback = document.getElementById('barFallbackIcon');
@@ -629,32 +698,12 @@
       };
     }
 
-    function recordPlay(track) {
-      playCounts[track.path] = (playCounts[track.path] || 0) + 1;
-      history = history.filter(p => p !== track.path);
-      history.unshift(track.path);
-      if (history.length > 50) history.pop();
-
-      if (config.username) {
-        fetch(`${config.serverUrl}/api/sync`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            username: config.username,
-            favorites: favorites,
-            history: history,
-            play_counts: playCounts
-          })
-        }).catch(() => {});
-      }
-    }
-
     function toggleFavCurrent() {
       if (currentTrackIndex === -1) return;
       const track = currentPlaylist[currentTrackIndex];
       toggleFav(track.path);
       const isFav = favorites.includes(track.path);
-      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition px-1' : 'text-slate-300 hover:text-rose-500 transition px-1';
+      document.getElementById('barFavBtn').className = isFav ? 'text-rose-500 transition p-1' : 'text-slate-300 hover:text-rose-500 transition p-1';
       if (currentPage === 'nowplaying') {
         renderNowPlaying(document.getElementById('contentContainer'));
       }
@@ -666,20 +715,10 @@
       } else {
         favorites.push(path);
       }
-      if (config.username) {
-        fetch(`${config.serverUrl}/api/sync`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            username: config.username,
-            favorites: favorites,
-            history: history,
-            play_counts: playCounts
-          })
-        }).catch(() => {});
-      }
+      syncUserData();
     }
 
+    // Audio Scrubber & Completion Handler
     function setupAudioEvents() {
       const seek = document.getElementById('seekSlider');
       const cur = document.getElementById('currentTime');
@@ -691,6 +730,11 @@
         seek.value = (audio.currentTime / audio.duration) * 100;
         cur.innerText = formatTime(audio.currentTime);
         tot.innerText = formatTime(audio.duration);
+
+        // Only count song if user reached at least 85% of duration
+        if (!currentSongCompleted && activeTrackPath && (audio.currentTime / audio.duration >= 0.85)) {
+          triggerVerifiedPlayCount(activeTrackPath);
+        }
 
         const npCur = document.getElementById('npCurrentTime');
         const npTot = document.getElementById('npTotalTime');
@@ -714,7 +758,13 @@
         };
       }
 
-      audio.onended = () => playNext();
+      // Natural finish counts as verified play
+      audio.onended = () => {
+        if (!currentSongCompleted && activeTrackPath) {
+          triggerVerifiedPlayCount(activeTrackPath);
+        }
+        playNext();
+      };
     }
 
     function setupKeyboardShortcuts() {
@@ -767,6 +817,77 @@
       renderSongList(document.getElementById('contentContainer'), filtered, `Search: "${query}"`);
     }
 
+    // Playlist Picker Modal Logic
+    function openPlaylistPicker(track) {
+      pickerTargetTrack = track;
+      document.getElementById('pickerTrackTitle').innerText = track.title;
+      renderPickerPlaylists();
+      document.getElementById('playlistPickerModal').classList.remove('hidden');
+    }
+
+    function openPlaylistPickerForCurrent() {
+      if (currentTrackIndex === -1 && library.length > 0) currentTrackIndex = 0;
+      const track = currentPlaylist[currentTrackIndex] || library[0];
+      if (track) openPlaylistPicker(track);
+    }
+
+    function closePlaylistPicker() {
+      document.getElementById('playlistPickerModal').classList.add('hidden');
+      pickerTargetTrack = null;
+    }
+
+    function renderPickerPlaylists() {
+      const container = document.getElementById('pickerPlaylistList');
+      if (!playlists.length) {
+        container.innerHTML = '<p class="text-[11px] text-slate-400 p-2 text-center">No playlists created yet. Type a name below to create your first one!</p>';
+        return;
+      }
+
+      container.innerHTML = playlists.map(pl => {
+        const alreadyIn = pl.songs.includes(pickerTargetTrack.path);
+        return `
+          <div onclick="toggleTrackInPlaylist('${pl.id}', '${pickerTargetTrack.path}')" class="p-2.5 rounded-xl border border-purple-100 flex items-center justify-between hover:bg-brand-50 cursor-pointer transition">
+            <span class="text-xs font-bold text-slate-700 truncate">${pl.name}</span>
+            <span class="text-xs ${alreadyIn ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}">
+              ${alreadyIn ? '<i class="fa-solid fa-check"></i> Added' : '+ Add'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleTrackInPlaylist(plId, path) {
+      const pl = playlists.find(p => p.id === plId);
+      if (!pl) return;
+      if (pl.songs.includes(path)) {
+        pl.songs = pl.songs.filter(p => p !== path);
+      } else {
+        pl.songs.push(path);
+      }
+      syncUserData();
+      renderPickerPlaylists();
+      if (currentPage === 'playlists') renderPlaylistsView(document.getElementById('contentContainer'));
+    }
+
+    function pickerCreateAndAdd() {
+      const input = document.getElementById('pickerNewPlName');
+      const name = input.value.trim();
+      if (!name) return;
+
+      const newPl = {
+        id: 'pl_' + Date.now(),
+        name: name,
+        songs: pickerTargetTrack ? [pickerTargetTrack.path] : []
+      };
+      playlists.push(newPl);
+      syncUserData();
+      input.value = '';
+      closePlaylistPicker();
+      alert(`Added "${pickerTargetTrack.title}" to "${name}"`);
+      if (currentPage === 'playlists') renderPlaylistsView(document.getElementById('contentContainer'));
+    }
+
+    // Navigation Router
     function navigate(page) {
       currentPage = page;
       document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -788,10 +909,117 @@
         renderSongList(container, favSongs, 'Favorite Tracks');
       }
       if (page === 'mostplayed') renderMostPlayed(container);
+      if (page === 'playlists') renderPlaylistsView(container);
       if (page === 'folders') renderFolderView(container);
       if (page === 'settings') renderSettings(container);
     }
 
+    // View: Custom Playlists Management
+    function renderPlaylistsView(container) {
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-ul text-indigo-500"></i> My Playlists (${playlists.length})
+              </h2>
+              <p class="text-xs font-semibold text-slate-400 mt-1">Create unlimited custom playlists and organize your tracks</p>
+            </div>
+            <button onclick="promptCreatePlaylist()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-brand-500/20 transition self-start sm:self-auto">
+              <i class="fa-solid fa-plus"></i> New Playlist
+            </button>
+          </div>
+
+          ${playlists.length ? `
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              ${playlists.map(pl => {
+                const count = pl.songs.length;
+                const firstSong = library.find(s => s.path === pl.songs[0]);
+                const cover = firstSong ? getCoverUrl(firstSong.path) : '';
+                return `
+                  <div class="p-4 rounded-2xl bg-white border border-purple-100/70 hover:shadow-lg transition space-y-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-700 text-white flex items-center justify-center text-lg shadow overflow-hidden relative flex-shrink-0">
+                        <i class="fa-solid fa-list-ul"></i>
+                        ${cover ? `<img src="${cover}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />` : ''}
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="text-sm font-bold text-slate-800 truncate">${pl.name}</h4>
+                        <p class="text-[11px] text-slate-400">${count} ${count === 1 ? 'song' : 'songs'}</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-purple-50">
+                      <button onclick="playEntirePlaylist('${pl.id}')" class="px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 font-bold text-xs flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-play text-[10px]"></i> Play All
+                      </button>
+                      <div class="flex items-center gap-1">
+                        <button onclick="viewPlaylistSongs('${pl.id}')" title="View Tracks" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-purple-50 text-xs">
+                          <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button onclick="deletePlaylist('${pl.id}')" title="Delete Playlist" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 text-xs">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div class="p-12 bg-white rounded-3xl border border-purple-100 text-center space-y-3 shadow-sm">
+              <div class="w-14 h-14 rounded-2xl bg-purple-50 text-brand-600 flex items-center justify-center text-2xl mx-auto shadow-inner">
+                <i class="fa-solid fa-folder-plus"></i>
+              </div>
+              <h3 class="font-extrabold text-base text-slate-800">No playlists yet</h3>
+              <p class="text-xs text-slate-400 max-w-sm mx-auto">Create a playlist to group your favorite songs together across multiple music directors and albums.</p>
+              <button onclick="promptCreatePlaylist()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs transition">Create First Playlist</button>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function promptCreatePlaylist() {
+      const name = prompt("Enter a name for your new playlist:");
+      if (!name || !name.trim()) return;
+      const newPl = {
+        id: 'pl_' + Date.now(),
+        name: name.trim(),
+        songs: []
+      };
+      playlists.push(newPl);
+      syncUserData();
+      renderPlaylistsView(document.getElementById('contentContainer'));
+    }
+
+    function deletePlaylist(plId) {
+      if (!confirm("Are you sure you want to delete this playlist?")) return;
+      playlists = playlists.filter(p => p.id !== plId);
+      syncUserData();
+      renderPlaylistsView(document.getElementById('contentContainer'));
+    }
+
+    function playEntirePlaylist(plId) {
+      const pl = playlists.find(p => p.id === plId);
+      if (!pl || !pl.songs.length) {
+        alert("This playlist has no songs yet. Click the + icon on any song to add tracks!");
+        return;
+      }
+      const trackObjects = pl.songs.map(p => library.find(s => s.path === p)).filter(Boolean);
+      if (trackObjects.length) {
+        playTrack(trackObjects[0], trackObjects);
+      }
+    }
+
+    function viewPlaylistSongs(plId) {
+      const pl = playlists.find(p => p.id === plId);
+      if (!pl) return;
+      const tracks = pl.songs.map(p => library.find(s => s.path === p)).filter(Boolean);
+      renderSongList(document.getElementById('contentContainer'), tracks, `Playlist: ${pl.name}`);
+    }
+
+    // Now Playing View
     function renderNowPlaying(container) {
       if (currentTrackIndex === -1 && library.length > 0) {
         currentTrackIndex = 0;
@@ -845,6 +1073,9 @@
                 <button onclick="toggleFavCurrent()" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold transition flex items-center gap-2 ${isFav ? 'text-rose-500 bg-rose-50/50' : 'text-slate-600'}">
                   <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i> ${isFav ? 'Favorited' : 'Add to Favorites'}
                 </button>
+                <button onclick="openPlaylistPickerForCurrent()" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold text-slate-600 transition flex items-center gap-2">
+                  <i class="fa-solid fa-list-plus text-indigo-500"></i> Add to Playlist
+                </button>
                 <button onclick="openTrackFolder('${track.language}', '${track.director}')" class="px-4 py-2 rounded-xl border border-purple-100 hover:bg-purple-50 text-xs font-bold text-slate-600 transition flex items-center gap-2">
                   <i class="fa-solid fa-folder-open text-amber-500"></i> Open Folder
                 </button>
@@ -859,7 +1090,7 @@
                   <span class="text-xs font-extrabold text-slate-700 uppercase">${track.filename.split('.').pop()}</span>
                 </div>
                 <div>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Plays</span>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Verified Plays</span>
                   <span class="text-xs font-extrabold text-slate-700">${plays} times</span>
                 </div>
                 <div>
@@ -939,8 +1170,11 @@
                       <p class="text-[11px] text-slate-400 truncate">${s.director} •${s.album}</p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <button onclick="event.stopPropagation(); toggleFav('${s.path}'); this.querySelector('i').classList.toggle('text-rose-500');" class="text-slate-300 hover:text-rose-500 p-1">
+                  <div class="flex items-center gap-2 sm:gap-3">
+                    <button onclick="event.stopPropagation(); openPlaylistPicker(${JSON.stringify(s).replace(/"/g, '&quot;')});" title="Add to Playlist" class="text-slate-300 hover:text-brand-600 p-1">
+                      <i class="fa-solid fa-list-plus text-xs sm:text-sm"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); toggleFav('${s.path}'); this.querySelector('i').classList.toggle('text-rose-500');" title="Favorite" class="text-slate-300 hover:text-rose-500 p-1">
                       <i class="fa-solid fa-heart text-xs sm:text-sm ${favorites.includes(s.path) ? 'text-rose-500' : ''}"></i>
                     </button>
                     <span class="hidden sm:inline text-xs font-medium text-slate-400">${s.language}</span>
@@ -958,7 +1192,13 @@
 
       container.innerHTML = `
         <div>
-          <h2 class="text-lg sm:text-xl font-black text-slate-800 mb-4 sm:mb-6"><i class="fa-solid fa-fire text-amber-500 mr-2"></i>Most Played Tracks</h2>
+          <div class="mb-4 sm:mb-6">
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-fire text-amber-500"></i> Most Played Tracks
+            </h2>
+            <p class="text-xs text-slate-400 font-semibold mt-1">Tracks count only after verified completion (≥ 85% listened)</p>
+          </div>
+
           <div class="bg-white rounded-2xl border border-purple-100 overflow-hidden shadow-sm">
             ${sorted.length ? sorted.map((s, idx) => `
               <div class="p-3 sm:px-6 flex items-center justify-between hover:bg-brand-50/50 cursor-pointer" onclick='playTrack(${JSON.stringify(s)})'>
@@ -973,15 +1213,19 @@
                     <p class="text-[11px] text-slate-400 truncate">${s.director} •${s.album}</p>
                   </div>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold whitespace-nowrap">${playCounts[s.path]} plays</span>
+                <div class="flex items-center gap-3">
+                  <span class="px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold whitespace-nowrap">${playCounts[s.path]} full${playCounts[s.path] === 1 ? 'play' : 'plays'}</span>
+                  <button onclick="event.stopPropagation(); openPlaylistPicker(${JSON.stringify(s).replace(/"/g, '&quot;')});" class="text-slate-300 hover:text-brand-600 p-1">
+                    <i class="fa-solid fa-list-plus text-xs"></i>
+                  </button>
+                </div>
               </div>
-            `).join('') : '<div class="p-8 text-center text-xs text-slate-400">No tracks played yet. Start streaming to populate your most played list!</div>'}
+            `).join('') : '<div class="p-8 text-center text-xs text-slate-400">No tracks completed yet. Fully play a song to see it ranked here!</div>'}
           </div>
         </div>
       `;
     }
 
-    // Directory View (formerly Server Directory Browser)
     function renderFolderView(container) {
       let levelTracks = library;
       currentFolderRoute.forEach((folder, idx) => {
@@ -1050,7 +1294,12 @@
                     </div>
                     <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${s.title}</h4>
                   </div>
-                  <i class="fa-solid fa-play text-xs text-brand-600 ml-2"></i>
+                  <div class="flex items-center gap-2">
+                    <button onclick="event.stopPropagation(); openPlaylistPicker(${JSON.stringify(s).replace(/"/g, '&quot;')});" class="text-slate-300 hover:text-brand-600 p-1">
+                      <i class="fa-solid fa-list-plus text-xs"></i>
+                    </button>
+                    <i class="fa-solid fa-play text-xs text-brand-600 ml-1"></i>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -1073,16 +1322,35 @@
       renderFolderView(document.getElementById('contentContainer'));
     }
 
+    // View: Settings with Connection Config & Clear User Data
     function renderSettings(container) {
       container.innerHTML = `
         <div class="max-w-2xl space-y-6">
-          <h2 class="text-lg sm:text-xl font-black text-slate-800">Connection Settings</h2>
+          <h2 class="text-lg sm:text-xl font-black text-slate-800">Settings</h2>
+
+          <!-- Server Connection -->
           <div class="p-4 sm:p-6 rounded-2xl bg-white border border-purple-100 space-y-4 shadow-sm">
+            <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-server text-brand-600"></i> Server Host Configuration
+            </h3>
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cloudflare Stream URL</label>
               <input id="setServerUrl" type="text" value="${config.serverUrl}" class="w-full px-4 py-2.5 rounded-xl border border-purple-100 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
             </div>
             <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition">Save Changes</button>
+          </div>
+
+          <!-- Clear Data Option -->
+          <div class="p-4 sm:p-6 rounded-2xl bg-white border border-rose-100 space-y-3 shadow-sm">
+            <h3 class="font-extrabold text-sm text-rose-600 flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation"></i> Clear User Data
+            </h3>
+            <p class="text-xs text-slate-400">
+              This will reset your personal <strong>Most Played counts, Favorites, and Listen History</strong> for <span class="font-bold text-slate-700">${config.username}</span> from both your browser and Ubuntu server. Your playlists will remain safe.
+            </p>
+            <button onclick="clearUserData()" class="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs border border-rose-200 transition">
+              <i class="fa-solid fa-trash-can mr-1.5"></i> Clear My Data
+            </button>
           </div>
         </div>
       `;
@@ -1094,6 +1362,29 @@
       localStorage.setItem('dunju_server', url);
       fetchServerLibrary();
       alert('Settings saved!');
+    }
+
+    async function clearUserData() {
+      if (!confirm(`Are you sure you want to clear your most played, favorites, and history for ${config.username}? This cannot be undone.`)) {
+        return;
+      }
+
+      favorites = [];
+      history = [];
+      playCounts = {};
+
+      try {
+        await fetch(`${config.serverUrl}/api/clear-user-data`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username: config.username })
+        });
+        alert('All statistics, history, and favorites cleared successfully!');
+        navigate('home');
+      } catch (err) {
+        alert('Cleared locally (could not reach server).');
+        navigate('home');
+      }
     }
   </script>
 </body>

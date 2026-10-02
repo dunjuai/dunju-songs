@@ -82,9 +82,7 @@
       </div>
       <p id="pickerTrackTitle" class="text-xs text-slate-400 font-bold truncate mb-4"></p>
       
-      <div id="pickerPlaylistList" class="space-y-2 max-h-60 overflow-y-auto custom-scroll mb-4">
-        <!-- Rendered by JS -->
-      </div>
+      <div id="pickerPlaylistList" class="space-y-2 max-h-60 overflow-y-auto custom-scroll mb-4"></div>
 
       <div class="pt-3 border-t border-purple-50 flex items-center gap-2">
         <input id="pickerNewPlName" type="text" placeholder="Or create new playlist..." class="flex-1 px-3 py-2 rounded-xl border border-purple-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/40">
@@ -138,7 +136,6 @@
         <button onclick="navigate('mostplayed'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="mostplayed">
           <i class="fa-solid fa-fire w-5 text-center text-amber-500"></i> Most Played
         </button>
-        <!-- Full Custom Playlists Option -->
         <button onclick="navigate('playlists'); toggleSidebar(false);" class="nav-btn w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition text-slate-600 hover:bg-brand-50 hover:text-brand-600" data-page="playlists">
           <i class="fa-solid fa-list-ul w-5 text-center text-indigo-500"></i> Playlists
         </button>
@@ -151,7 +148,7 @@
       </nav>
     </div>
 
-    <!-- Live Status Badge (Live vs Not Reachable) -->
+    <!-- Live Status Badge -->
     <div class="p-6 border-t border-purple-50 flex items-center justify-between text-xs text-slate-400">
       <span id="libCount">0 songs</span>
       <div id="serverStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 font-bold transition">
@@ -281,7 +278,7 @@
     let favorites = [];
     let history = [];
     let playCounts = {};
-    let playlists = []; // Array of { id, name, songs: [paths...] }
+    let playlists = [];
 
     let isShuffle = false;
     let repeatMode = 0;
@@ -506,6 +503,7 @@
           history = data.history || [];
           playCounts = data.play_counts || {};
           playlists = data.playlists || [];
+          persistLocalUserData();
         }
 
         document.getElementById('authModal').classList.add('hidden');
@@ -516,21 +514,64 @@
       }
     }
 
+    // Save user state to local cache
+    function persistLocalUserData() {
+      if (!config.username) return;
+      localStorage.setItem(`dunju_userdata_${config.username}`, JSON.stringify({
+        favorites,
+        history,
+        playCounts,
+        playlists
+      }));
+    }
+
+    // Load and restore user session from local cache & server
     function initUserSession(user) {
       document.getElementById('userNameLabel').innerText = user;
       document.getElementById('userAvatar').innerText = user[0].toUpperCase();
       document.getElementById('mobUserNameLabel').innerText = user;
       document.getElementById('mobUserAvatar').innerText = user[0].toUpperCase();
 
-      const cached = localStorage.getItem('dunju_library_cache');
-      if (cached) {
-        library = JSON.parse(cached);
+      // 1. Immediately restore from local cache to prevent empty data
+      const cachedUserData = localStorage.getItem(`dunju_userdata_${user}`);
+      if (cachedUserData) {
+        try {
+          const parsed = JSON.parse(cachedUserData);
+          favorites = parsed.favorites || [];
+          history = parsed.history || [];
+          playCounts = parsed.playCounts || {};
+          playlists = parsed.playlists || [];
+        } catch (e) {}
+      }
+
+      // 2. Load cached catalog
+      const cachedLib = localStorage.getItem('dunju_library_cache');
+      if (cachedLib) {
+        library = JSON.parse(cachedLib);
         currentPlaylist = [...library];
         document.getElementById('libCount').innerText = `${library.length} songs`;
       }
 
-      navigate('home');
+      navigate(currentPage || 'home');
       fetchServerLibrary();
+
+      // 3. Simultaneously fetch latest server record to stay synced
+      fetch(`${config.serverUrl}/api/user-data?username=${encodeURIComponent(user)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.username === user) {
+            favorites = data.favorites || [];
+            history = data.history || [];
+            playCounts = data.play_counts || {};
+            playlists = data.playlists || [];
+            persistLocalUserData();
+            // Refresh current screen with server updates
+            if (['mostplayed', 'favorites', 'playlists'].includes(currentPage)) {
+              navigate(currentPage);
+            }
+          }
+        })
+        .catch(() => {});
     }
 
     function logout() {
@@ -559,7 +600,7 @@
       }
     }
 
-    // Playback Engine with Accurate Play Tracking
+    // Playback Engine with Verified Completion Tracking
     function playTrack(track, playlist = null) {
       if (playlist) {
         currentPlaylist = playlist;
@@ -567,11 +608,9 @@
       }
       currentTrackIndex = currentPlaylist.findIndex(t => t.path === track.path);
 
-      // Reset completed flag for the new song
       currentSongCompleted = false;
       activeTrackPath = track.path;
 
-      // Add to recent history queue upon start
       history = history.filter(p => p !== track.path);
       history.unshift(track.path);
       if (history.length > 50) history.pop();
@@ -589,7 +628,7 @@
       });
     }
 
-    // Verified Play Count Increment (Triggered only when song completes or passes 85%)
+    // Increments count ONLY once per track after verified listen (>= 85% or natural end)
     function triggerVerifiedPlayCount(path) {
       if (currentSongCompleted || activeTrackPath !== path) return;
       currentSongCompleted = true;
@@ -607,6 +646,7 @@
 
     function syncUserData() {
       if (!config.username) return;
+      persistLocalUserData();
       fetch(`${config.serverUrl}/api/sync`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -718,7 +758,6 @@
       syncUserData();
     }
 
-    // Audio Scrubber & Completion Handler
     function setupAudioEvents() {
       const seek = document.getElementById('seekSlider');
       const cur = document.getElementById('currentTime');
@@ -731,7 +770,7 @@
         cur.innerText = formatTime(audio.currentTime);
         tot.innerText = formatTime(audio.duration);
 
-        // Only count song if user reached at least 85% of duration
+        // Verified listen: passes 85% mark
         if (!currentSongCompleted && activeTrackPath && (audio.currentTime / audio.duration >= 0.85)) {
           triggerVerifiedPlayCount(activeTrackPath);
         }
@@ -758,7 +797,7 @@
         };
       }
 
-      // Natural finish counts as verified play
+      // Song completed naturally
       audio.onended = () => {
         if (!currentSongCompleted && activeTrackPath) {
           triggerVerifiedPlayCount(activeTrackPath);
@@ -817,7 +856,7 @@
       renderSongList(document.getElementById('contentContainer'), filtered, `Search: "${query}"`);
     }
 
-    // Playlist Picker Modal Logic
+    // Playlist Picker Logic
     function openPlaylistPicker(track) {
       pickerTargetTrack = track;
       document.getElementById('pickerTrackTitle').innerText = track.title;
@@ -887,7 +926,6 @@
       if (currentPage === 'playlists') renderPlaylistsView(document.getElementById('contentContainer'));
     }
 
-    // Navigation Router
     function navigate(page) {
       currentPage = page;
       document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -914,7 +952,7 @@
       if (page === 'settings') renderSettings(container);
     }
 
-    // View: Custom Playlists Management
+    // Playlists Management View
     function renderPlaylistsView(container) {
       container.innerHTML = `
         <div class="space-y-6">
@@ -1322,13 +1360,11 @@
       renderFolderView(document.getElementById('contentContainer'));
     }
 
-    // View: Settings with Connection Config & Clear User Data
     function renderSettings(container) {
       container.innerHTML = `
         <div class="max-w-2xl space-y-6">
           <h2 class="text-lg sm:text-xl font-black text-slate-800">Settings</h2>
 
-          <!-- Server Connection -->
           <div class="p-4 sm:p-6 rounded-2xl bg-white border border-purple-100 space-y-4 shadow-sm">
             <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-server text-brand-600"></i> Server Host Configuration
@@ -1340,7 +1376,6 @@
             <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition">Save Changes</button>
           </div>
 
-          <!-- Clear Data Option -->
           <div class="p-4 sm:p-6 rounded-2xl bg-white border border-rose-100 space-y-3 shadow-sm">
             <h3 class="font-extrabold text-sm text-rose-600 flex items-center gap-2">
               <i class="fa-solid fa-triangle-exclamation"></i> Clear User Data
@@ -1372,6 +1407,7 @@
       favorites = [];
       history = [];
       playCounts = {};
+      persistLocalUserData();
 
       try {
         await fetch(`${config.serverUrl}/api/clear-user-data`, {
